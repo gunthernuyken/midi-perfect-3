@@ -343,6 +343,17 @@ function tabPreview(startBar,blockStart,nBars){
     prevOn=on;
     var p=null;
     var waiting=(typeof window.extSlaving==='function')&&extSlaving()&&window.ext&&!window.ext.running;
+    /* Der Wartezustand des Clock-Slave stand bisher nur im Log - wer das
+       Protokoll nicht offen hat, sieht eine App, die "einfach nicht startet".
+       Deshalb steht er jetzt gross im Takt-Zaehler der Transportleiste. */
+    var bc=el('barCtr'), lc=el('loopCtr');
+    if(on&&waiting){
+      if(bc&&bc.textContent!=='\u23f3')bc.textContent='\u23f3';
+      if(lc&&lc.getAttribute('data-wait')!=='1'){lc.setAttribute('data-wait','1');lc.textContent='SLAVE: wartet auf DAW';}
+    }else if(lc&&lc.getAttribute('data-wait')==='1'){
+      lc.removeAttribute('data-wait');
+      if(!on){lc.textContent='--';if(bc)bc.textContent='--';}
+    }
     if(on&&!waiting&&!document.hidden&&typeof window.curMpt==='function'){
       var mpt=curMpt();
       if(mpt){
