@@ -1977,7 +1977,7 @@ details[open]>summary .card-title{margin-block-end:var(--sp-3)}
      SEITENLEISTE
      ============================================================ -->
 <nav class="rail" aria-label="Bereiche">
-  <div class="rail-brand"><span>MIDI PERFECT&nbsp;3<small id="buildTag">BUILD 2026-08-01-N</small></span></div>
+  <div class="rail-brand"><span>MIDI PERFECT&nbsp;3<small id="buildTag">BUILD 2026-08-01-O</small></span></div>
   <button class="rail-item" data-view="midi" aria-current="page">
     <span class="ico" aria-hidden="true">&#9889;</span><span class="label">MIDI &amp; Transport</span><kbd>1</kbd><span class="tip">MIDI &amp; Transport</span></button>
   <button class="rail-item" data-view="song">
@@ -6679,7 +6679,11 @@ function tabRenderChords(){
     }
     cell.textContent=name;
     cell.classList.toggle('has',!!name);
-    if(name){cell.setAttribute('data-root',e.root);cell.setAttribute('data-type',e.type);}
+    if(name){
+      cell.setAttribute('data-root',e.root);
+      cell.setAttribute('data-type',e.type);
+      cell.setAttribute('title','Klicken: Griffbild zu '+name);
+    }else cell.removeAttribute('title');
   }
 }
 /* --- Griffbilder: bewegliche E-/A-Form-Barregriffe ---------------------
