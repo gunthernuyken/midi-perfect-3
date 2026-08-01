@@ -1568,3 +1568,20 @@ input[type="range"]:disabled::-webkit-slider-thumb { background: var(--c-text-di
 }
 .chord-pop figure{margin:14px 0 0;display:flex;flex-direction:column;align-items:center;gap:2px;}
 .chord-pop figcaption{font:600 var(--fs-micro)/1 var(--ff);color:var(--c-text-mute);}
+
+/* Songbook-Modus: Griffbilder permanent ueber der Tabulatur ---------------
+   Wie im gedruckten Notenblatt: Mini-Diagramm mit Namen an jedem
+   Akkordwechsel. Zustand lebt am Schalter (#diaTgl), CSS reagiert per
+   :has() - keine Spiegelklasse noetig. */
+.app:has(#diaTgl[aria-pressed="true"]) .piano-dock{block-size:160px;}
+.app:has(#diaTgl[aria-pressed="true"]) .tab{
+  grid-template-rows:58px repeat(6,1fr);
+  block-size:130px;
+}
+.app:has(#diaTgl[aria-pressed="true"]) .tab .tch{
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;
+  line-height:12px;
+}
+.tab .tch svg{display:block;}
+.dock-body{align-items:end;}
+.piano-wrap{margin-block-end:2px;}

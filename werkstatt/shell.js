@@ -240,7 +240,7 @@ function tabPut(s,c,txt,li){
   b.textContent=txt; b.style.color=window.LANES[li].color;
   e2.appendChild(b); e2.classList.add('has');
 }
-var tabWin=-1, tabBar=-1, tabMode='win';
+var tabWin=-1, tabBar=-1, tabMode='win', diaOn=true;
 /* Zwei Modi: 'win' fuellt das 8-Takte-Fenster, 'scroll' schiebt pro Takt nach
    links (laufender Takt fest in der Mitte). Beide zeichnen eine VORSCHAU aus
    den bereits generierten Loop-Events (sched.ev): kommende Noten stehen
@@ -434,12 +434,14 @@ function tabRenderChords(){
       var prev=chordBar(bar-1);
       if(k===0||!prev||prev.label!==e.label)name=e.label;
     }
-    cell.textContent=name;
+    if(name&&diaOn){
+      cell.innerHTML='<span class="tch-name">'+name+'</span>'+chordSVGMini(e.root,e.type);
+    }else cell.textContent=name;
     cell.classList.toggle('has',!!name);
     if(name){
       cell.setAttribute('data-root',e.root);
       cell.setAttribute('data-type',e.type);
-      cell.setAttribute('title','Klicken: Griffbild zu '+name);
+      cell.setAttribute('title','Klicken: gro\u00dfes Griffbild zu '+name);
     }else cell.removeAttribute('title');
   }
 }
@@ -476,6 +478,31 @@ function chordSVG(form,rel,baseFret){
     else if(r>0)sv+='<circle cx="'+x+'" cy="'+(y0+(r-0.5)*dy+(baseFret>0?dy:0)-(baseFret>0?0:0))+'" r="4.5" fill="#00d4ff"/>';
   }
   if(baseFret>0)sv+='<text x="'+(x0+5*dx+9)+'" y="'+(y0+dy-4)+'" fill="#b6c0d8" font-size="9">'+baseFret+'</text>';
+  return sv+'</svg>';
+}
+function pickShape(root,type){
+  var suf=SUFMAP.hasOwnProperty(type)?SUFMAP[type]:'7';
+  var shapes=SHAPES[suf]||SHAPES['7'];
+  var form=shapes[0][0], rel=shapes[0][1];
+  var base=(form==='E')?(root-4+12)%12:(root-9+12)%12;
+  return {form:form,rel:rel,base:base,
+    approx:(suf!==type)&&!((type==='maj'&&suf==='')||(type==='min'&&suf==='m'))};
+}
+/* Mini-Griffbild fuer die Songbook-Zeile: eine Form, vier Buende, klein. */
+function chordSVGMini(root,type){
+  var sh=pickShape(root,type),rel=sh.rel,base=sh.base;
+  var W=56,H=42,x0=5,dx=8,y0=10,dy=8,i;
+  var sv='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" aria-hidden="true">';
+  for(i=0;i<6;i++)sv+='<line x1="'+(x0+i*dx)+'" y1="'+y0+'" x2="'+(x0+i*dx)+'" y2="'+(y0+4*dy)+'" stroke="#9aa3c0" stroke-width=".8"/>';
+  for(i=0;i<=4;i++)sv+='<line x1="'+x0+'" y1="'+(y0+i*dy)+'" x2="'+(x0+5*dx)+'" y2="'+(y0+i*dy)+'" stroke="#9aa3c0" stroke-width="'+(i===0&&base===0?2.4:.8)+'"/>';
+  if(base>0)sv+='<rect x="'+(x0-2)+'" y="'+(y0+1.5)+'" width="'+(5*dx+4)+'" height="'+(dy-3)+'" rx="2.5" fill="#00d4ff" opacity=".85"/>';
+  for(i=0;i<6;i++){
+    var r=rel[i],x=x0+i*dx;
+    if(r<0)sv+='<text x="'+x+'" y="'+(y0-3)+'" fill="#9aa3c0" font-size="7" text-anchor="middle">\u00d7</text>';
+    else if(r===0&&base===0)sv+='<circle cx="'+x+'" cy="'+(y0-5)+'" r="2" fill="none" stroke="#9aa3c0" stroke-width=".8"/>';
+    else if(r>0)sv+='<circle cx="'+x+'" cy="'+(y0+(r-0.5)*dy+(base>0?dy:0))+'" r="2.8" fill="#00d4ff"/>';
+  }
+  if(base>0)sv+='<text x="'+(x0+5*dx+4)+'" y="'+(y0+dy-2)+'" fill="#b6c0d8" font-size="7">'+base+'</text>';
   return sv+'</svg>';
 }
 var chordPop=null;
@@ -619,6 +646,16 @@ function boot(){
   buildTab(); buildVisChips('pianoChips',pianoOn,'pianoLanes'); buildVisChips('tabChips',tabOn,'tabLanes');
   var mt=el('tabModeTgl');
   if(mt)mt.addEventListener('click',function(){setTabMode(tabMode==='scroll'?'win':'scroll');});
+  var dt=el('diaTgl');
+  if(dt){
+    if(o.tabDia===false){diaOn=false;dt.setAttribute('aria-pressed','false');}
+    dt.addEventListener('click',function(){
+      diaOn=!diaOn;
+      this.setAttribute('aria-pressed',diaOn?'true':'false');
+      if(window.MP3TAB)MP3TAB.refresh();
+      var u=ui();u.tabDia=diaOn;saveUi(u);
+    });
+  }
   setTabMode(o.tabMode||'win',true);
   appEl.setAttribute('data-playing',stopBtn.disabled?'false':'true');
 }
