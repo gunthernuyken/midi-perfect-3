@@ -217,7 +217,9 @@ var pianoOn=[1,1,1,1,1], tabOn=[0,1,1,1,1];      // Drums im Tab per Default aus
 var TABSTR=[64,59,55,50,45,40], TABNAM=['e','B','G','D','A','E'], LANEAB=['Dr','Ba','Ch','Ar','Me'];
 var TABBARS=8, TABCPB=8;                          // 8 Takte, Achtel-Raster
 function buildTab(){
-  var t=el('tab'); if(!t)return; var h='',n=TABBARS*TABCPB;
+  var t=el('tab'); if(!t)return; var h='',n=TABBARS*TABCPB,c;
+  h+='<span class="ts"></span>';
+  for(c=0;c<n;c++)h+='<span class="tch" id="tabh-'+c+'"></span>';
   for(var s=0;s<6;s++){
     h+='<span class="ts">'+TABNAM[s]+'</span>';
     for(var c=0;c<n;c++)h+='<span class="tc'+(c%TABCPB===0?' tbar':(c%2===0?' tbeat':''))+'" id="tab-'+s+'-'+c+'"></span>';
@@ -229,6 +231,8 @@ function buildTab(){
 function clearTab(){
   var cs=document.querySelectorAll('#tab .tc.has');
   for(var i=0;i<cs.length;i++){cs[i].innerHTML='';cs[i].classList.remove('has');}
+  var hs=document.querySelectorAll('#tab .tch.has');
+  for(var j=0;j<hs.length;j++){hs[j].textContent='';hs[j].classList.remove('has');}
 }
 function tabPut(s,c,txt,li){
   var e2=el('tab-'+s+'-'+c); if(!e2)return;
@@ -401,13 +405,114 @@ function tabEnterBar(bar,force){
     tabBar=bar;
     if(tt)tt.style.setProperty('--bar',4);
     tabPreview(bar,4,4);
+    tabRenderChords();
   }else{
     var win=Math.floor(bar/TABBARS);
     tabBar=bar;
-    if(win!==tabWin||force){tabWin=win;clearTab();tabPreview(win*TABBARS,0,TABBARS);}
+    if(win!==tabWin||force){tabWin=win;clearTab();tabPreview(win*TABBARS,0,TABBARS);tabRenderChords();}
     if(tt)tt.style.setProperty('--bar',bar%TABBARS);
   }
 }
+/* --- Akkordzeile ueber der Tabulatur -----------------------------------
+   Pro Takt steht der Akkordname am Taktanfang, aber nur bei einem WECHSEL
+   (und immer am linken Rand des Fensters, damit man nie raten muss, was
+   gerade gilt). Quelle ist gBars - dieselbe Wahrheit, aus der die Engine
+   spielt. Klick auf den Namen oeffnet ein Griffbild. */
+function chordBar(bar){
+  var gb=window.gBars; if(!gb||!gb.length||bar<0)return null;
+  var BARt=window.BAR||1920;
+  var lb=(window.sched&&sched.loopTicks)?Math.round(sched.loopTicks/BARt):gb.length;
+  if(lb>0)bar=bar%lb;
+  return gb[bar]||null;
+}
+function tabRenderChords(){
+  var startBar=(tabMode==='scroll')?tabBar-4:(tabWin<0?0:tabWin*TABBARS);
+  for(var k=0;k<TABBARS;k++){
+    var cell=el('tabh-'+(k*TABCPB)); if(!cell)continue;
+    var bar=startBar+k, e=chordBar(bar), name='';
+    if(e){
+      var prev=chordBar(bar-1);
+      if(k===0||!prev||prev.label!==e.label)name=e.label;
+    }
+    cell.textContent=name;
+    cell.classList.toggle('has',!!name);
+    if(name){cell.setAttribute('data-root',e.root);cell.setAttribute('data-type',e.type);}
+  }
+}
+/* --- Griffbilder: bewegliche E-/A-Form-Barregriffe ---------------------
+   Bewusst ohne externe Bibliothek: zwei Standardformen pro Akkordtyp,
+   verschoben an den richtigen Bund. Nicht jede moegliche Voicing-Variante,
+   aber immer ein spielbarer Griff. Exotische Typen werden auf den
+   naechstliegenden Griff vereinfacht und als solcher gekennzeichnet. */
+var SUFMAP={'':'','maj':'','m':'m','min':'m','7':'7','m7':'m7','maj7':'maj7',
+  'sus4':'sus4','sus2':'sus2','6':'6','m6':'m6','m7b5':'m7b5',
+  '9':'7','13':'7','7b9':'7','7#9':'7','m9':'m7','dim':'m7b5','dim7':'m7b5','aug':''};
+var SHAPES={
+  '':    [['E',[0,2,2,1,0,0]],  ['A',[-1,0,2,2,2,0]]],
+  'm':   [['E',[0,2,2,0,0,0]],  ['A',[-1,0,2,2,1,0]]],
+  '7':   [['E',[0,2,0,1,0,0]],  ['A',[-1,0,2,0,2,0]]],
+  'm7':  [['E',[0,2,0,0,0,0]],  ['A',[-1,0,2,0,1,0]]],
+  'maj7':[['A',[-1,0,2,1,2,0]], ['E',[0,-1,1,1,0,-1]]],
+  'sus4':[['E',[0,2,2,2,0,0]],  ['A',[-1,0,2,2,3,0]]],
+  'sus2':[['A',[-1,0,2,2,0,0]]],
+  '6':   [['E',[0,2,2,1,2,0]],  ['A',[-1,0,2,2,2,2]]],
+  'm6':  [['A',[-1,0,2,2,1,2]]],
+  'm7b5':[['A',[-1,0,1,0,1,-1]]]
+};
+function chordSVG(form,rel,baseFret){
+  var W=86,H=104,x0=12,dx=12,y0=26,dy=15,i;
+  var sv='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+  for(i=0;i<6;i++)sv+='<line x1="'+(x0+i*dx)+'" y1="'+y0+'" x2="'+(x0+i*dx)+'" y2="'+(y0+5*dy)+'" stroke="#9aa3c0" stroke-width="1"/>';
+  for(i=0;i<=5;i++)sv+='<line x1="'+x0+'" y1="'+(y0+i*dy)+'" x2="'+(x0+5*dx)+'" y2="'+(y0+i*dy)+'" stroke="#9aa3c0" stroke-width="'+(i===0&&baseFret===0?3:1)+'"/>';
+  if(baseFret>0)sv+='<rect x="'+(x0-3)+'" y="'+(y0+2)+'" width="'+(5*dx+6)+'" height="'+(dy-4)+'" rx="4" fill="#00d4ff" opacity=".85"/>';
+  for(i=0;i<6;i++){
+    var r=rel[i],x=x0+i*dx;
+    if(r<0)sv+='<text x="'+x+'" y="'+(y0-8)+'" fill="#9aa3c0" font-size="10" text-anchor="middle">\u00d7</text>';
+    else if(r===0&&baseFret===0)sv+='<circle cx="'+x+'" cy="'+(y0-11)+'" r="3.5" fill="none" stroke="#9aa3c0"/>';
+    else if(r>0)sv+='<circle cx="'+x+'" cy="'+(y0+(r-0.5)*dy+(baseFret>0?dy:0)-(baseFret>0?0:0))+'" r="4.5" fill="#00d4ff"/>';
+  }
+  if(baseFret>0)sv+='<text x="'+(x0+5*dx+9)+'" y="'+(y0+dy-4)+'" fill="#b6c0d8" font-size="9">'+baseFret+'</text>';
+  return sv+'</svg>';
+}
+var chordPop=null;
+function closeChordPop(){
+  if(!chordPop)return;
+  chordPop.remove(); chordPop=null;
+  document.removeEventListener('click',chordPopDoc,true);
+  document.removeEventListener('keydown',chordPopKey,true);
+}
+function chordPopDoc(e){ if(chordPop&&!chordPop.contains(e.target))closeChordPop(); }
+function chordPopKey(e){ if(e.key==='Escape')closeChordPop(); }
+function showChordPop(root,type,label,anchorEl){
+  closeChordPop();
+  var suf=SUFMAP.hasOwnProperty(type)?SUFMAP[type]:'7';
+  var approx=(suf!==type)&&!((type==='maj'&&suf==='')||(type==='min'&&suf==='m'));
+  var shapes=SHAPES[suf]||SHAPES['7'];
+  chordPop=document.createElement('div');
+  chordPop.className='chord-pop';
+  var h='<span class="cp-head">'+label+(approx?' \u2248':'')+'</span>';
+  for(var i=0;i<shapes.length;i++){
+    var form=shapes[i][0], rel=shapes[i][1];
+    var base=(form==='E')?(root-4+12)%12:(root-9+12)%12;
+    h+='<figure>'+chordSVG(form,rel,base)+'<figcaption>'+form+'-Form'+(base>0?' \u00b7 '+base+'. Bund':' \u00b7 offen')+'</figcaption></figure>';
+  }
+  chordPop.innerHTML=h;
+  document.body.appendChild(chordPop);
+  var r=anchorEl.getBoundingClientRect(), pw=chordPop.offsetWidth;
+  var x=Math.min(Math.max(6,r.left),window.innerWidth-pw-6);
+  chordPop.style.insetInlineStart=x+'px';
+  chordPop.style.insetBlockStart=Math.max(6,r.top-chordPop.offsetHeight-6)+'px';
+  document.addEventListener('click',chordPopDoc,true);
+  document.addEventListener('keydown',chordPopKey,true);
+}
+(function(){
+  var t=el('tab'); if(!t)return;
+  t.addEventListener('click',function(e){
+    var c=e.target.closest?e.target.closest('.tch.has'):null; if(!c)return;
+    showChordPop(parseInt(c.getAttribute('data-root'),10),c.getAttribute('data-type')||'',c.textContent,c);
+  });
+})();
+
 function setTabMode(m,quiet){
   tabMode=(m==='scroll')?'scroll':'win';
   var b=el('tabModeTgl');

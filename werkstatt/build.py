@@ -9,7 +9,7 @@ import io, re, sys
 
 MP2   = '/tmp/out/MIDI PERFECT 2.html'
 DST   = '/tmp/mp3/MIDI PERFECT 3.html'
-BUILD = 'BUILD 2026-08-01-M'
+BUILD = 'BUILD 2026-08-01-N'
 
 src   = io.open(MP2, encoding='utf-8').read()
 css   = io.open('/tmp/design/mp3.css', encoding='utf-8').read()
@@ -139,6 +139,15 @@ document.addEventListener('visibilitychange',function(){
   LOOKAHEAD=document.hidden?LOOKAHEAD_BG:LOOKAHEAD_FG;
 });""",
     'Worker-Ticker')
+# --- 3e Cubase-Stop: Wertekonflikt Markup/Engine --------------------------
+# Das neue "Bei STOP"-Select liefert 'stop'/'none'; die Engine pruefte auf
+# den alten V2-Wert '1'. Ergebnis: der rote Stop-Knopf schickte NIE ein
+# MMC-Stop an Cubase, nur der Sofortbefehl (force) funktionierte.
+engine = sub1(engine,
+    "  if(!force&&gEl('cubStop').value!=='1')return;",
+    "  if(!force&&gEl('cubStop').value==='none')return;",
+    'Cubase-Stop-Wert')
+
 # --- 3d Clock-Slave: im Wartezustand nicht schedulen ----------------------
 # Stand SLAVE auf AN, aber die DAW lieferte (noch) keine Clock, interpolierte
 # schedTick trotzdem ab Play munter weiter - bis die 4-Sekunden-Resynchro-

@@ -155,7 +155,7 @@
   --h-transport:   52px;
   --w-rail:       200px;
   --w-rail-min:    56px;
-  --h-piano:      104px;
+  --h-piano:      116px;
   --h-piano-min:   30px;
   --pad-content:   14px;
 
@@ -1471,8 +1471,8 @@ input[type="range"]:disabled::-webkit-slider-thumb { background: var(--c-text-di
   display:grid;
   grid-template-columns:14px repeat(64,minmax(0,1fr));
   position:relative;
-  grid-template-rows:repeat(6,1fr);
-  block-size:74px;
+  grid-template-rows:14px repeat(6,1fr);
+  block-size:86px;
   font:600 10px/1 var(--ff-mono);
 }
 .tab .ts{
@@ -1540,3 +1540,31 @@ input[type="range"]:disabled::-webkit-slider-thumb { background: var(--c-text-di
 }
 .su-menu button:hover{background:var(--c-accent-wash);border-color:var(--c-border-ctl);}
 .su-menu .su-empty{color:var(--c-text-mute);font:500 var(--fs-sm)/1.4 var(--ff);padding:6px;}
+
+/* Akkordzeile ueber der Tabulatur + Griffbild-Popup */
+.tab .tch{
+  position:relative;
+  font:700 10px/14px var(--ff-mono);
+  color:var(--c-accent);
+  white-space:nowrap;overflow:visible;
+}
+.tab .tch.has{cursor:pointer;}
+.tab .tch.has:hover{color:#8ee9ff;text-decoration:underline;}
+.chord-pop{
+  position:fixed;z-index:120;
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px;
+  background:#131326;
+  border:1px solid var(--c-border-ctl);
+  border-radius:var(--r-1);
+  box-shadow:0 10px 28px rgba(0,0,0,.6);
+}
+.chord-pop .cp-head{
+  position:absolute;inset-block-start:-1px;inset-inline-start:-1px;
+  padding:2px 8px;
+  background:var(--c-accent);color:#04121b;
+  font:700 var(--fs-micro)/1.6 var(--ff-mono);
+  border-radius:var(--r-1) 0 var(--r-1) 0;
+}
+.chord-pop figure{margin:14px 0 0;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.chord-pop figcaption{font:600 var(--fs-micro)/1 var(--ff);color:var(--c-text-mute);}
