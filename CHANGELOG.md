@@ -3,6 +3,19 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## MIDI PERFECT 4 — BUILD 2026-08-01-A (Versionsschnitt)
+
+Der Stand von Version 3, BUILD 2026-08-01-Q, wird **MIDI PERFECT 4** —
+gleicher Ordner, gleiche Werkstatt, `build.py` baut jetzt mit `VER='4'`.
+
+- `MIDI PERFECT 3.html` bleibt eingefroren auf BUILD 2026-08-01-Q
+- eigener Speicher-Namensraum `midiperfect4.*` nach dem Muster des
+  V2-zu-V3-Schnitts: Version 3 behält ihre Setups, Transfer per .json
+- die Live-Seite (index.html) führt jetzt auf Version 4; Version 3 bleibt
+  unter MIDI-PERFECT-3.html erreichbar
+- Build-Zählung beginnt neu bei A — alles darunter ist die Historie von
+  Version 3
+
 ## BUILD 2026-08-01-Q — Lagen-Heuristik, Griffbild = Tab-Lage, echte Zeitposition
 
 **Problem:** Die Saitenwahl nahm pro Note stur den kleinsten Bund — Läufe

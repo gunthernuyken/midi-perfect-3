@@ -10,6 +10,15 @@ implementiert; ohne Web MIDI gibt es keine Klangausgabe.
 im Browser, Setups bleiben lokal (localStorage, getrennt von der Datei-
 Version).
 
+## Version 4
+
+Seit dem 01.08.2026 ist **MIDI PERFECT 4** die lebende Version — gleicher
+Ordner, gleiche Werkstatt, gebaut von derselben `build.py` (`VER = '4'`).
+`MIDI PERFECT 3.html` bleibt eingefroren auf BUILD 2026-08-01-Q. Version 4
+hat einen eigenen Speicher-Namensraum (`midiperfect4.*`) — Version 3
+behält ihre Setups; Transfer per „.json sichern / laden" im Bereich
+Export & Setups. Die Build-Zählung beginnt neu bei A.
+
 | Dokument | Inhalt |
 |---|---|
 | [ARCHITEKTUR.md](ARCHITEKTUR.md) | Schichten, Bau, Scheduler, Tabulatur-System |
