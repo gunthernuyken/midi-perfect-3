@@ -1437,3 +1437,106 @@ input[type="range"]:disabled::-webkit-slider-thumb { background: var(--c-text-di
     --c-text-mute:   #c2cbe0;
   }
 }
+
+/* ============================================================
+   TABULATUR-DOCK — Klaviatur | Tabulatur, je mit Lane-Filtern
+   Die Bundzahl steht AUF der Saitenlinie; eine belegte Zelle
+   blendet ihre Linie aus (wie im ASCII-Tab: --3--).
+   ============================================================ */
+.dock-body{
+  display:grid;
+  grid-template-columns:clamp(280px,25%,1150px) minmax(0,1fr);
+  gap:var(--sp-5);
+  margin-inline:var(--sp-4);
+  min-block-size:0;
+}
+.vis-chips{display:inline-flex;gap:4px;letter-spacing:normal;text-transform:none;}
+.vis-chip{
+  min-block-size:20px;padding-inline:6px;
+  border:1px solid color-mix(in srgb,var(--lane) 60%,transparent);
+  border-radius:var(--r-1);
+  background:color-mix(in srgb,var(--lane) 12%,transparent);
+  color:var(--lane);
+  font:600 var(--fs-micro)/1 var(--ff-mono);
+  cursor:pointer;
+}
+.vis-chip::before{content:"\25CF\00a0";}
+.vis-chip[aria-pressed="false"]{
+  background:none;color:var(--c-text-mute);
+  border-color:var(--c-border-soft);
+}
+.vis-chip[aria-pressed="false"]::before{content:"\25CB\00a0";}
+.vis-chip:hover{border-color:var(--lane);}
+.tab{
+  display:grid;
+  grid-template-columns:14px repeat(64,minmax(0,1fr));
+  position:relative;
+  grid-template-rows:repeat(6,1fr);
+  block-size:74px;
+  font:600 10px/1 var(--ff-mono);
+}
+.tab .ts{
+  color:var(--c-text-mute);
+  display:flex;align-items:center;
+}
+.tab .tc{
+  display:flex;align-items:center;justify-content:center;
+  color:var(--lane,var(--c-text));
+  background:linear-gradient(var(--c-border-soft),var(--c-border-soft)) 0 50%/100% 1px no-repeat;
+}
+.tab .tc.tbeat{
+  background:
+    linear-gradient(var(--c-border-soft),var(--c-border-soft)) 0 0/1px 100% no-repeat,
+    linear-gradient(var(--c-border-soft),var(--c-border-soft)) 0 50%/100% 1px no-repeat;
+}
+.tab .tc.tbar{
+  background:
+    linear-gradient(var(--c-border-ctl),var(--c-border-ctl)) 0 0/1px 100% no-repeat,
+    linear-gradient(var(--c-border-soft),var(--c-border-soft)) 0 50%/100% 1px no-repeat;
+}
+.tab-cur{
+  position:absolute;inset-block:0;
+  inline-size:calc((100% - 14px)/8);
+  inset-inline-start:calc(14px + (100% - 14px)*var(--bar,0)/8);
+  background:color-mix(in srgb,var(--c-accent) 14%,transparent);
+  border-inline:1px solid color-mix(in srgb,var(--c-accent) 50%,transparent);
+  pointer-events:none;
+  transition:inset-inline-start var(--t-fast,.12s) linear;
+}
+.tab-play{
+  position:absolute;inset-block:0;inline-size:2px;
+  inset-inline-start:calc(14px + (100% - 14px)*var(--pos,0)/8);
+  background:var(--c-accent);
+  box-shadow:0 0 6px var(--c-accent);
+  opacity:0;pointer-events:none;
+}
+.tab .tc b{background:var(--c-rail);padding-inline:2px;font-weight:600;}
+.vis-mode{
+  min-block-size:20px;padding-inline:6px;
+  border:1px solid var(--c-border-soft);
+  border-radius:var(--r-1);
+  background:none;color:var(--c-text-mute);
+  font:600 var(--fs-micro)/1 var(--ff-mono);
+  letter-spacing:normal;text-transform:none;
+  cursor:pointer;
+}
+.vis-mode:hover{color:var(--c-text);border-color:var(--c-border-ctl);}
+.vis-mode[aria-pressed="true"]{color:var(--c-accent);border-color:color-mix(in srgb,var(--c-accent) 60%,transparent);background:var(--c-accent-wash);}
+
+/* Setup-Lade-Menue an der Transportleiste */
+.su-menu{
+  position:fixed;z-index:100;
+  display:flex;flex-direction:column;gap:2px;
+  padding:6px;min-inline-size:200px;max-block-size:60vh;overflow:auto;
+  background:#131326;
+  border:1px solid var(--c-border-ctl);
+  border-radius:var(--r-1);
+  box-shadow:0 8px 24px rgba(0,0,0,.55);
+}
+.su-menu button{
+  min-block-size:28px;padding-inline:10px;text-align:start;
+  background:none;border:1px solid transparent;border-radius:var(--r-1);
+  color:var(--c-text);font:500 var(--fs-sm)/1 var(--ff);cursor:pointer;
+}
+.su-menu button:hover{background:var(--c-accent-wash);border-color:var(--c-border-ctl);}
+.su-menu .su-empty{color:var(--c-text-mute);font:500 var(--fs-sm)/1.4 var(--ff);padding:6px;}
