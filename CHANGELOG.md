@@ -3,6 +3,23 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-J — Taktwechsel an der Taktgrenze
+
+**Problem:** Hinterlegung und Scroll-Schub wechselten erst mit dem ersten
+Note-On des neuen Takts. Liegt die erste Note auf Schlag 2 oder später,
+hinkte die Anzeige hinterher.
+
+**Ursache:** Der Taktwechsel wurde aus den Noten-Ereignissen abgeleitet —
+zwischen Noten wusste die Anzeige nichts von der Zeit.
+
+**Geändert:** Der Taktwechsel wandert in die Playhead-Schleife, die die
+Scheduler-Position kontinuierlich liest — Umschalten exakt an der
+Taktgrenze. Beim Transport-Neustart wird das Raster zurückgesetzt, statt
+im Scroll-Modus weiterzuschieben.
+
+**Gemessen** headless: Umschaltpunkte bei 2–3 % des neuen Takts
+(Abtastraster 60 ms), vorher abhängig von der ersten Note.
+
 ## BUILD 2026-08-01-I — Setup speichern mit Feedback, Laden an der Leiste
 
 **Problem:** Der Setup-Knopf in der Transportleiste speicherte stumm — die

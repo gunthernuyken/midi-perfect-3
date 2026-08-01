@@ -6545,21 +6545,30 @@ function tabPreview(startBar,blockStart,nBars){
    kommt aus sched (tickRef/msRef) - dieselbe Interpolation wie schedTick,
    auch im Clock-Slave-Betrieb gueltig. Nur Anzeige, ein Style-Write pro
    Frame, pausiert bei verstecktem Tab von selbst (rAF). */
-function tabPos(){
-  var sc=window.sched; if(!sc||!sc.on)return null;
-  if(typeof window.curMpt!=='function')return null;
-  var mpt=curMpt(); if(!mpt)return null;
-  var t=sc.tickRef+(performance.now()-sc.msRef)/mpt;
-  if(t<0)return null;                                  // Count-In
-  var BARt=window.BAR||1920;
-  var bar=Math.floor(t/BARt), frac=(t-bar*BARt)/BARt;
-  return tabMode==='scroll' ? 4+frac : (bar%TABBARS)+frac;
-}
+/* Die Schleife treibt auch den TAKTWECHSEL: er passiert exakt an der
+   Taktgrenze, nicht erst beim ersten Note-On des neuen Takts (der kann auf
+   Schlag 2 oder spaeter liegen). Beim Transport-Neustart wird das Raster
+   zurueckgesetzt statt weiterzuscrollen. */
 (function(){
+  var prevOn=false;
   function loop(){
-    var ph=el('tabPlay');
+    var ph=el('tabPlay'), sc=window.sched, on=!!(sc&&sc.on);
+    if(on&&!prevOn){tabBar=-1;tabWin=-1;clearTab();}
+    prevOn=on;
+    var p=null;
+    if(on&&!document.hidden&&typeof window.curMpt==='function'){
+      var mpt=curMpt();
+      if(mpt){
+        var t=sc.tickRef+(performance.now()-sc.msRef)/mpt;
+        if(t>=0){
+          var BARt=window.BAR||1920;
+          var bar=Math.floor(t/BARt), frac=(t-bar*BARt)/BARt;
+          if(bar!==tabBar)tabEnterBar(bar);
+          p=(tabMode==='scroll')?4+frac:(bar%TABBARS)+frac;
+        }
+      }
+    }
     if(ph){
-      var p=document.hidden?null:tabPos();
       if(p==null)ph.style.opacity='0';
       else{ph.style.opacity='1';ph.style.setProperty('--pos',p);}
     }
