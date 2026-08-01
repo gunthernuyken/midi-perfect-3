@@ -12,7 +12,7 @@ import io, re, sys
 
 VER   = '4'
 DST   = '/tmp/mp3/MIDI PERFECT %s.html' % VER
-BUILD = 'BUILD 2026-08-01-B'
+BUILD = 'BUILD 2026-08-01-C'
 
 engine= io.open('/tmp/mp3/engine.js', encoding='utf-8').read()
 css   = io.open('/tmp/design/mp3.css', encoding='utf-8').read()

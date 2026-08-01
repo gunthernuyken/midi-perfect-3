@@ -400,18 +400,39 @@ function tabPreview(startBar,blockStart,nBars){
   }
   requestAnimationFrame(loop);
 })();
+/* Looplaenge in Takten - dieselbe Wahrheit wie chordBar. */
+function tabLoopBars(){
+  var sc=window.sched, B=window.BAR||1920;
+  return (sc&&sc.loopTicks)?Math.max(1,Math.round(sc.loopTicks/B)):0;
+}
 window.MP3TAB={
   refresh:function(){ if(tabBar>=0)tabEnterBar(tabBar,true); },
+  dbg:function(){ return {bar:tabBar,win:tabWin,mode:tabMode}; },
+  /* Zeichnet NUR - der Taktwechsel gehoert allein der Playhead-Schleife.
+     Die visuellen Timer feuern mit setTimeout-Jitter auch mal NACH der
+     Taktgrenze; frueher loeste so ein Nachzuegler tabEnterBar rueckwaerts
+     aus, der Scroll-Modus schob trotzdem weiter und das Raster wanderte
+     pro Vorfall zwei Takte gegen den Klang (am Loop-Ende: kompletter
+     Leerschub). Jetzt wird die Note relativ zum aktuellen Takt platziert;
+     was nicht mehr im Fenster liegt, faellt weg. */
   note:function(m,li,t){
     if(!tabOn[li]||t<0)return;
     var BARt=window.BAR||1920;
     var bar=Math.floor(t/BARt);
     var cellT=BARt/TABCPB, inBar=t-bar*BARt;
     var sub=Math.min(TABCPB-1,Math.floor(inBar/cellT));
-    if(bar!==tabBar)tabEnterBar(bar);
-    var col=(tabMode==='scroll')
-      ? 4*TABCPB+sub
-      : (bar%TABBARS)*TABCPB+sub;
+    if(tabBar<0)tabEnterBar(bar);                 // allererste Note vor dem ersten Frame
+    var col;
+    if(tabMode==='scroll'){
+      var d=bar-tabBar, lb=tabLoopBars();
+      if(lb){d=((d%lb)+lb)%lb; if(d>lb/2)d-=lb;}  // minimale signierte Distanz (Loop-Wrap)
+      var bc2=4+d;
+      if(bc2<0||bc2>=TABBARS)return;
+      col=bc2*TABCPB+sub;
+    }else{
+      if(Math.floor(bar/TABBARS)!==tabWin)return; // Nachzuegler aus dem alten Fenster
+      col=(bar%TABBARS)*TABCPB+sub;
+    }
     if(tabLive(m,li,col))return;                  // Vorschau-Zahl fest machen
     tabDraw(m,li,col,false,(inBar-sub*cellT)/cellT,tabLagePos(bar));
   }
@@ -422,8 +443,10 @@ function tabEnterBar(bar,force){
   var tt=el('tab');
   if(tabMode==='scroll'){
     if(tabBar>=0&&!force){
-      var d=bar-tabBar, n=(d>0)?Math.min(d,TABBARS):1;
-      for(var k=0;k<n;k++)tabShift();
+      var d=bar-tabBar, lb=tabLoopBars();
+      if(lb){d=((d%lb)+lb)%lb; if(d>lb/2)d-=lb;}  // Loop-Wrap 12->1 ist EIN Schritt vorwaerts
+      if(d>0){var n=Math.min(d,TABBARS);for(var k=0;k<n;k++)tabShift();}
+      else if(d<0)clearTab();                     // echter Ruecksprung (Locate): neu aufbauen
     }
     tabBar=bar;
     if(tt)tt.style.setProperty('--bar',4);
