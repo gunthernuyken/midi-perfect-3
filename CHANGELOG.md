@@ -3,6 +3,40 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-C — Scroll-Modus: Taktwechsel-Race behoben
+
+**Problem** (gemeldet in 6/8): Tabulatur und Klang laufen im Scroll-Modus
+auseinander — beim Loop-Rücksprung 12→1 klingt Takt 1 „asynchron", danach
+steht das Display mehrere Takte neben dem Klang.
+
+**Ursache** — kein Taktarten-Fehler, eine Race-Condition seit Einführung
+des Scroll-Modus: Die visuellen Note-Timer (`setTimeout`) feuern mit Jitter
+auch mal **nach** der Taktgrenze, die Playhead-Schleife (`rAF`) hat den
+Takt dann schon gewechselt. So ein Nachzügler rief `tabEnterBar` mit dem
+**alten** Takt auf; der Scroll-Modus schob bei `d<=0` trotzdem einmal
+weiter und der nächste Frame schob erneut — **+2 Takte Versatz pro
+Vorfall**, kumulativ. Am Loop-Ende wurde aus dem Nachzügler `d=+11` →
+8 Shifts → das Raster komplett leergeschoben. In 6/8 schlägt das fast
+immer zu (kürzere Takte, Patterns mit Noten auf dem letzten Achtel);
+in 4/4 war es selten, aber möglich.
+
+**Geändert**
+
+- Der Taktwechsel gehört jetzt **allein der Playhead-Schleife** — sie hat
+  die autoritative interpolierte Uhr und feuert exakt an der Grenze.
+- `MP3TAB.note` zeichnet nur noch: Spalte relativ zum aktuellen Takt über
+  die minimale signierte Loop-Distanz. Ein Nachzügler aus dem Vortakt
+  landet in der Spalte, in der sein Takt nach dem Shift steht; was nicht
+  mehr im Fenster liegt, fällt weg. (Vorher wurden Nachzügler zusätzlich
+  falsch in die Mitte gezeichnet.)
+- Loop-Rücksprung 12→1 ist über die Distanzrechnung **ein** Schritt
+  vorwärts; ein echter Rücksprung (Locate in der DAW) baut neu auf statt
+  falsch weiterzuschieben.
+
+**Getestet** headless in 6/8, Scroll-Modus, über mehrere Loop-Durchläufe:
+Display-Takt == Klang-Takt an jeder Messstelle; injizierte Nachzügler
+verschieben das Raster nicht mehr.
+
 ## BUILD 2026-08-01-B — Taktarten 3/4 und 6/8 (Stufe 1 + 2)
 
 Die Engine kennt jetzt drei Taktarten: **4/4, 3/4 und 6/8** — wählbar unter
