@@ -9,7 +9,7 @@ import io, re, sys
 
 MP2   = '/tmp/out/MIDI PERFECT 2.html'
 DST   = '/tmp/mp3/MIDI PERFECT 3.html'
-BUILD = 'BUILD 2026-08-01-K'
+BUILD = 'BUILD 2026-08-01-L'
 
 src   = io.open(MP2, encoding='utf-8').read()
 css   = io.open('/tmp/design/mp3.css', encoding='utf-8').read()
@@ -204,7 +204,13 @@ out = u'''<!DOCTYPE html>
 </body></html>
 ''' % (css, compat + '\n' + layout, body, engine, shell)
 
-out = out.replace('BUILD 2026-08-01-A &middot; Setup-Speicher &middot; Arrangement-Bogen &middot; Zweisprachig DE/EN', BUILD)
+# Build-Kennung in der Seitenleiste. sub1 statt replace: faellt der Anker weg,
+# bricht der Bau ab, statt still die alte Kennung auszuliefern - genau das war
+# passiert (die Leiste zeigte dauerhaft "-A", egal welcher Build lief).
+out = sub1(out,
+    '<small id="buildTag">BUILD 2026-08-01-A</small>',
+    '<small id="buildTag">%s</small>' % BUILD,
+    'Build-Kennung')
 io.open(DST, 'w', encoding='utf-8').write(out)
 
 # --- 7 Abgleich: kennt die Huelle jede ID, die die Engine anspricht? ------
