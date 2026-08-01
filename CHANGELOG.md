@@ -3,6 +3,27 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-K — Clock-Slave: Wartezustand schedult nicht mehr
+
+**Problem:** Mit SLAVE AN, aber ohne laufende DAW-Clock spielte Play den
+ersten Takt und die ersten Noten des zweiten — danach Stille. Bei 81 BPM
+reproduzierbar exakt nach 1,35 Takten.
+
+**Ursache:** Erbfehler aus Version 2. Der Transport meldete zwar „wartet
+auf das Start-Signal der DAW", gewartet hat aber nur die Anzeige:
+`schedTick` interpolierte die Zeitbasis ab Play munter weiter und
+schedulte Noten — bis die 4000-ms-Resynchronisation die Zeitbasis
+zurückriss (4000 ms bei 81 BPM = 1,35 Takte). Danach lief der Zeiger dem
+bereits verbrauchten Ereignis-Index ewig hinterher.
+
+**Geändert:** Im Slave-Modus ohne `ext.running` schedult `schedTick`
+nichts — erst das Start-Signal der DAW (Start/Continue/SPP) öffnet den
+Hahn. Der Playhead der Tabulatur bleibt im Wartezustand ausgeblendet.
+
+**Getestet** headless mit simulierter Clock: Wartezustand 5 s → 0 Noten;
+nach simuliertem DAW-Start mit Clock-Ticks läuft die Wiedergabe normal an.
+Master-Betrieb unverändert.
+
 ## BUILD 2026-08-01-J — Taktwechsel an der Taktgrenze
 
 **Problem:** Hinterlegung und Scroll-Schub wechselten erst mit dem ersten

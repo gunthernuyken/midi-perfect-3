@@ -4961,6 +4961,7 @@ function schedTick(){
   var hum=parseInt(document.getElementById('human').value,10)/100;
   var mpt=curMpt();
   var slave=extSlaving();
+  if(slave&&!ext.running)return;      // SLAVE wartet auf die DAW - erst das Start-Signal oeffnet den Hahn
   // Im Slave-Modus gehört sched.tickRef der Clock-Routine; hier wird zwischen zwei
   // Clocks nur interpoliert, damit der Lookahead weiterhin greift.
   var dt=now-sched.msRef;
@@ -6556,7 +6557,8 @@ function tabPreview(startBar,blockStart,nBars){
     if(on&&!prevOn){tabBar=-1;tabWin=-1;clearTab();}
     prevOn=on;
     var p=null;
-    if(on&&!document.hidden&&typeof window.curMpt==='function'){
+    var waiting=(typeof window.extSlaving==='function')&&extSlaving()&&window.ext&&!window.ext.running;
+    if(on&&!waiting&&!document.hidden&&typeof window.curMpt==='function'){
       var mpt=curMpt();
       if(mpt){
         var t=sc.tickRef+(performance.now()-sc.msRef)/mpt;
