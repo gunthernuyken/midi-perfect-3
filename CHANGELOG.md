@@ -3,6 +3,16 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-M — Slave-Wartezustand sichtbar in der Transportleiste
+
+**Problem:** Seit Build K wartet der Transport bei SLAVE AN ehrlich auf die
+DAW-Clock — aber der Wartezustand stand nur im Protokoll. Wer das nicht
+offen hat, sieht eine App, die „einfach nicht startet".
+
+**Geändert:** Der Takt-Zähler zeigt im Wartezustand **⏳** und darunter
+**„SLAVE: wartet auf DAW"**. Startet die DAW, übernimmt die normale
+Anzeige; bei Stop wird zurückgesetzt.
+
 ## BUILD 2026-08-01-L — Build-Kennung zeigt wieder die Wahrheit
 
 **Problem:** Die Seitenleiste zeigte dauerhaft „BUILD 2026-08-01-A", egal
