@@ -436,7 +436,11 @@ function tabRenderChords(){
     }
     cell.textContent=name;
     cell.classList.toggle('has',!!name);
-    if(name){cell.setAttribute('data-root',e.root);cell.setAttribute('data-type',e.type);}
+    if(name){
+      cell.setAttribute('data-root',e.root);
+      cell.setAttribute('data-type',e.type);
+      cell.setAttribute('title','Klicken: Griffbild zu '+name);
+    }else cell.removeAttribute('title');
   }
 }
 /* --- Griffbilder: bewegliche E-/A-Form-Barregriffe ---------------------

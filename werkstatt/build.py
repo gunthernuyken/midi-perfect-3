@@ -9,7 +9,7 @@ import io, re, sys
 
 MP2   = '/tmp/out/MIDI PERFECT 2.html'
 DST   = '/tmp/mp3/MIDI PERFECT 3.html'
-BUILD = 'BUILD 2026-08-01-N'
+BUILD = 'BUILD 2026-08-01-O'
 
 src   = io.open(MP2, encoding='utf-8').read()
 css   = io.open('/tmp/design/mp3.css', encoding='utf-8').read()
