@@ -1999,7 +1999,7 @@ details[open]>summary .card-title{margin-block-end:var(--sp-3)}
      SEITENLEISTE
      ============================================================ -->
 <nav class="rail" aria-label="Bereiche">
-  <div class="rail-brand"><span>MIDI PERFECT&nbsp;4<small id="buildTag">BUILD 2026-08-01-A</small></span></div>
+  <div class="rail-brand"><span>MIDI PERFECT&nbsp;4<small id="buildTag">BUILD 2026-08-01-B</small></span></div>
   <button class="rail-item" data-view="midi" aria-current="page">
     <span class="ico" aria-hidden="true">&#9889;</span><span class="label">MIDI &amp; Transport</span><kbd>1</kbd><span class="tip">MIDI &amp; Transport</span></button>
   <button class="rail-item" data-view="song">
@@ -2073,6 +2073,8 @@ details[open]>summary .card-title{margin-block-end:var(--sp-3)}
         <div class="sl"><input type="range" id="energy" min="0" max="100" value="60"><span class="vd" id="energyVal">60</span></div>
         <label class="lbl" for="cplx">Complexity %</label>
         <div class="sl"><input type="range" id="cplx" min="0" max="100" value="45"><span class="vd" id="cplxVal">45</span></div>
+        <label class="lbl" for="meterSel">Taktart</label>
+        <select id="meterSel"><option value="4/4" selected>4/4</option><option value="3/4">3/4</option><option value="6/8">6/8</option></select>
         <label class="lbl" for="loop">Loop</label>
         <select id="loop">
           <option value="1">1x</option><option value="2">2x</option><option value="4" selected>4x</option>
@@ -2549,7 +2551,7 @@ var I18N={
 '🎸 Blues-Werkstatt':'🎸 Blues workshop',
 'Form & Turnaround · Transposition · Groove · Tempofelder · Chorus-Dynamik':
  'Form & turnaround · transposition · groove · tempo fields · chorus dynamics',
-'Tonart':'Key','Form':'Form','Zieltonart':'Target key',
+'Tonart':'Key','Taktart':'Meter','Form':'Form','Zieltonart':'Target key',
 'Turnaround (Takt 11–12)':'Turnaround (bars 11–12)',
 'ohne (I bleibt stehen)':'none (I stays)',
 'V7 (Standard)':'V7 (standard)',
@@ -2866,7 +2868,21 @@ function initI18n(){
 /* ============================================================
    0 · KONSTANTEN / UTILS
    ============================================================ */
-var PPQ = 480, BAR = PPQ * 4, Q = PPQ, E8 = PPQ / 2, S16 = PPQ / 4, T8 = PPQ / 3;
+var PPQ = 480, Q = PPQ, E8 = PPQ / 2, S16 = PPQ / 4, T8 = PPQ / 3;
+/* Taktarten (werkstatt/METER-ANALYSE.md): EIN Objekt beantwortet alle offenen
+   Fragen - Taktlaenge, Zaehlzeit, Puls, Swing-Einheit, Backbeat-Positionen,
+   Arrangement-Schwerpunkte und das SMF-Time-Signature-Event. MIDI Clock
+   uebertraegt keine Taktart; in der DAW muss sie von Hand mitgezogen werden. */
+var METERS={
+ '4/4':{id:'4/4',barTicks:1920,beats:4,beatTicks:480,pulses:4,pulseTicks:480,
+        swingUnit:480,backbeats:[480,1440],arrOn:[0,960],smf:[0x04,0x02,0x18,0x08]},
+ '3/4':{id:'3/4',barTicks:1440,beats:3,beatTicks:480,pulses:3,pulseTicks:480,
+        swingUnit:480,backbeats:[480],arrOn:[0],smf:[0x03,0x02,0x18,0x08]},
+ '6/8':{id:'6/8',barTicks:1440,beats:6,beatTicks:240,pulses:2,pulseTicks:720,
+        swingUnit:720,backbeats:[720],arrOn:[0,720],smf:[0x06,0x03,0x24,0x08]}
+};
+var METER=METERS['4/4'];
+var BAR=METER.barTicks;
 
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
 function hash32(){var h=2166136261>>>0;for(var i=0;i<arguments.length;i++){h^=(arguments[i]>>>0);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
@@ -2947,7 +2963,9 @@ var LANE_STYLES={
   ['bossa','Bossa Nova','Latin / Karibik'],['samba','Samba Surdo','Latin / Karibik'],['tumbao','Tumbao (Salsa)','Latin / Karibik'],
   ['reggae','Reggae One-Drop','Latin / Karibik'],['dub','Dub / Deep Roots','Latin / Karibik'],
   ['houseOff','House Offbeat','Elektronisch'],['synth16','Synthwave 16tel','Elektronisch'],['trapSlide','Trap 808 (lang, sparsam)','Elektronisch'],
-  ['sub','Sub / One-Note','Elektronisch']],
+  ['sub','Sub / One-Note','Elektronisch'],
+  ['waltz','Walzer (1 + 3)','3/4'],['waltzRun','Walzer Walkup','3/4'],
+  ['ballad68','6/8 Ballade (2 Pulse)','6/8'],['blues68','Slow Blues 6/8','6/8'],['jig','Jig 8tel-Lauf','6/8']],
  chords:[
   ['compSwing','Swing Comping (rootless)','Jazz'],['charleston','Charleston','Jazz'],['shells','Shell Voicings 1-3-7','Jazz'],
   ['bigBand','Big-Band Hits (Anticipation)','Jazz'],['quartal','Quartal Modal','Jazz'],['push','Anticipation / Push','Jazz'],
@@ -2956,6 +2974,8 @@ var LANE_STYLES={
   ['funk16','Funk 16tel','Funk / Soul'],['stabs','Offbeat Stabs','Funk / Soul'],['neoSoulComp','Neo-Soul 16tel lose','Funk / Soul'],
   ['gospel128','Gospel 12/8','Funk / Soul'],['tremolo','Tremolo 16tel','Funk / Soul'],['discoStab','Disco 16tel Stabs','Funk / Soul'],
   ['bossaComp','Bossa Comping','Latin / Karibik'],['montuno','Montuno (Salsa)','Latin / Karibik'],
+  ['waltzComp','Walzer-Comping (2+3)','3/4'],['jazzWaltzComp','Jazz-Walzer Comping','3/4'],
+  ['comp68','6/8 Comping (2 Pulse)','6/8'],['swell68','6/8 Pad','6/8'],
   ['reggaeSkank','Reggae Skank (Offbeat)','Latin / Karibik'],['skaUp','Ska Double Skank','Latin / Karibik'],
   ['housePluck','House Offbeat Pluck','Elektronisch'],['synthPulse','Synth-Puls 8tel','Elektronisch'],
   ['trance16','Trance 16tel Gate','Elektronisch'],['cine','Cinematic Swell','Elektronisch']],
@@ -2989,18 +3009,24 @@ var DK={kick:36,kick2:35,snare:38,snare2:40,rim:37,clap:39,hhC:42,hhP:44,hhO:46,
         tamb:54,cow:56,congaH:63,congaM:62,congaL:64,bongoH:60,bongoL:61,claves:75,maracas:70,
         agogoH:67,agogoL:68,cabasa:69,timbaleH:65,shaker:70,vibraslap:58};
 var DRUMPAT={
- rock8:{name:'Rock 8tel',g:'Rock / Pop',grid:16,rows:[[DK.kick,'X-------X-------'],[DK.snare,'----X-------X---'],[DK.hhC,'x-x-x-x-x-x-x-x-']]},
+ rock8:{name:'Rock 8tel',g:'Rock / Pop',grid:16,rows:[[DK.kick,'X-------X-------'],[DK.snare,'----X-------X---'],[DK.hhC,'x-x-x-x-x-x-x-x-']],
+   meters:{'3/4':{grid:12,rows:[[DK.kick,'X-----x-----'],[DK.snare,'----X---X---'],[DK.hhC,'x-x-x-x-x-x-']]},
+           '6/8':{grid:12,rows:[[DK.kick,'X-----x-----'],[DK.snare,'------X-----'],[DK.hhC,'x-x-x-x-x-x-']]}}},
  rock16:{name:'Rock 16tel Hats',g:'Rock / Pop',grid:16,rows:[[DK.kick,'X-----X-X-------'],[DK.snare,'----X-------X---'],[DK.hhC,'XxxxXxxxXxxxXxxx']]},
  rockHalf:{name:'Halftime Rock',g:'Rock / Pop',grid:16,rows:[[DK.kick,'X-------X-x-----'],[DK.snare,'--------X-------'],[DK.hhC,'x-x-x-x-x-x-x-x-']]},
  pop:{name:'Pop (Kick auf 3+)',g:'Rock / Pop',grid:16,rows:[[DK.kick,'X---------X-----'],[DK.snare,'----X-------X---'],[DK.hhC,'x-x-x-x-x-x-x-x-'],[DK.tamb,'----x-------x---']]},
  punk:{name:'Punk / Fast 8tel',g:'Rock / Pop',grid:16,rows:[[DK.kick,'X---X---X---X---'],[DK.snare,'----X-------X---'],[DK.hhC,'XxXxXxXxXxXxXxXx']]},
  metal:{name:'Metal Doublebass',g:'Rock / Pop',grid:16,rows:[[DK.kick,'XxxxXxxxXxxxXxxx'],[DK.snare,'----X-------X---'],[DK.ride,'x-x-x-x-x-x-x-x-'],[DK.crash,'X---------------']]},
  stadium:{name:'Stadium / Four-Floor Rock',g:'Rock / Pop',grid:16,rows:[[DK.kick,'X---X---X---X---'],[DK.snare,'----X-------X---'],[DK.hhO,'--x---x---x---x-'],[DK.crash,'X---------------']]},
- ballad:{name:'Ballade (Cross-Stick)',g:'Ruhig',grid:16,rows:[[DK.kick,'X-------x-------'],[DK.rim,'----x-------x---'],[DK.hhC,'x-o-x-o-x-o-x-o-']]},
+ ballad:{name:'Ballade (Cross-Stick)',g:'Ruhig',grid:16,rows:[[DK.kick,'X-------x-------'],[DK.rim,'----x-------x---'],[DK.hhC,'x-o-x-o-x-o-x-o-']],
+   meters:{'3/4':{grid:12,rows:[[DK.kick,'X-----------'],[DK.rim,'--------x---'],[DK.hhC,'x-o-x-o-x-o-']]},
+           '6/8':{grid:12,rows:[[DK.kick,'X-----------'],[DK.rim,'------x-----'],[DK.hhC,'x-o-x-x-o-x-']]}}},
  cine:{name:'Cinematic Toms',g:'Ruhig',grid:16,rows:[[DK.t4,'X---x---X---x---'],[DK.t2,'--x---x---x---x-'],[DK.snare,'--------X-------'],[DK.crash,'X---------------']]},
  shuffle:{name:'Blues Shuffle',g:'Blues / Swing',grid:12,rows:[[DK.kick,'X-----X-----'],[DK.snare,'---X-----X--'],[DK.hhC,'x-xx-xx-xx-x']]},
  halfShuffle:{name:'Purdie Halftime Shuffle',g:'Blues / Swing',grid:12,rows:[[DK.kick,'X-----x---x-'],[DK.snare,'o-oX-oo-oX-o'],[DK.hhC,'x-xx-xx-xx-x']]},
- jazzRide:{name:'Jazz Ride (Swing)',g:'Blues / Swing',grid:12,rows:[[DK.ride,'X--x-xX--x-x'],[DK.hhP,'---x-----x--'],[DK.kick,'o-----o-----'],[DK.snare,'------o---o-']]},
+ jazzRide:{name:'Jazz Ride (Swing)',g:'Blues / Swing',grid:12,rows:[[DK.ride,'X--x-xX--x-x'],[DK.hhP,'---x-----x--'],[DK.kick,'o-----o-----'],[DK.snare,'------o---o-']],
+   meters:{'3/4':{grid:12,rows:[[DK.ride,'X---x-x-x-x-'],[DK.hhP,'----x---x---'],[DK.kick,'o-----------'],[DK.snare,'------o---o-']]},
+           '6/8':{grid:12,rows:[[DK.ride,'X-x-x-X-x-x-'],[DK.hhP,'------x-----'],[DK.kick,'o-----------']]}}},
  jazzUp:{name:'Jazz Up-Tempo + Comping',g:'Blues / Swing',grid:12,rows:[[DK.ride,'X--x-xX--x-x'],[DK.hhP,'---x-----x--'],[DK.snare,'--o--x---o-x'],[DK.kick,'o----x------']]},
  jazzBrush:{name:'Brushes 4/4',g:'Blues / Swing',grid:12,rows:[[DK.snare2,'x--x-xx--x-x'],[DK.hhP,'---x-----x--'],[DK.kick,'o-----o-----']]},
  train:{name:'Train Beat 16tel',g:'Blues / Swing',grid:16,rows:[[DK.snare,'XoooXoooXoooXooo'],[DK.kick,'X---X---X---X---'],[DK.hhC,'--x---x---x---x-']]},
@@ -3035,7 +3061,24 @@ var DRUMPAT={
    [DK.hhC,'x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-'],
    [DK.crash,'--------------------------------']]},
  dnb:{name:'Drum & Bass',g:'Elektronisch',grid:16,rows:[[DK.kick,'X-----X---------'],[DK.snare,'----X-------X---'],[DK.hhC,'x-x-x-x-x-x-x-x-'],[DK.ride,'----------------']]},
- dubstep:{name:'Dubstep Halftime',g:'Elektronisch',grid:16,rows:[[DK.kick,'X-------------x-'],[DK.snare,'--------X-------'],[DK.hhC,'--x---x---x---x-']]}
+ dubstep:{name:'Dubstep Halftime',g:'Elektronisch',grid:16,rows:[[DK.kick,'X-------------x-'],[DK.snare,'--------X-------'],[DK.hhC,'--x---x---x---x-']]},
+ /* --- 3/4: eigene Patterns (only) --- */
+ waltz:{name:'Walzer',g:'3/4',only:'3/4',grid:12,rows:[[DK.kick,'X-----------'],[DK.snare,'----x---x---'],[DK.hhC,'x---x---x---']]},
+ jazzWaltz:{name:'Jazz-Walzer (Ride)',g:'3/4',only:'3/4',grid:12,rows:[[DK.ride,'X---x-x-x-x-'],[DK.hhP,'----x---x---'],[DK.kick,'o-----------'],[DK.snare,'------o---o-']]},
+ rockWaltz:{name:'Rock-Walzer',g:'3/4',only:'3/4',grid:12,rows:[[DK.kick,'X-----x-----'],[DK.snare,'----X---X---'],[DK.hhC,'x-x-x-x-x-x-']]},
+ countryWaltz:{name:'Country-Walzer',g:'3/4',only:'3/4',grid:12,rows:[[DK.kick,'X-----------'],[DK.rim,'----x---x---'],[DK.hhC,'x-xx-xx-xx-x']]},
+ balladWaltz:{name:'Walzer-Ballade (Cross-Stick)',g:'3/4',only:'3/4',grid:12,rows:[[DK.kick,'X-----------'],[DK.rim,'--------x---'],[DK.hhC,'x-o-x-o-x-o-']]},
+ brushWaltz:{name:'Walzer Brushes',g:'3/4',only:'3/4',grid:12,rows:[[DK.snare2,'X--x--x--x--'],[DK.hhP,'----x---x---'],[DK.kick,'o-----------']]},
+ folkWaltz:{name:'Folk-Walzer',g:'3/4',only:'3/4',grid:12,rows:[[DK.kick,'X-----------'],[DK.tamb,'----x---x---'],[DK.hhC,'x-x-x-x-x-x-']]},
+ tomWaltz:{name:'Tom-Walzer (Cinematic)',g:'3/4',only:'3/4',grid:12,rows:[[DK.t4,'X-----x-----'],[DK.t2,'--x-----x---'],[DK.crash,'X-----------']]},
+ /* --- 6/8: eigene Patterns (only) --- */
+ blues68:{name:'Slow Blues 6/8',g:'6/8',only:'6/8',grid:12,rows:[[DK.kick,'X-----------'],[DK.snare,'------X-----'],[DK.hhC,'x-x-x-x-x-x-']]},
+ rock68:{name:'Rock 6/8',g:'6/8',only:'6/8',grid:12,rows:[[DK.kick,'X-----x-----'],[DK.snare,'------X-----'],[DK.hhC,'x-x-x-x-x-x-']]},
+ ballad68:{name:'6/8 Ballade',g:'6/8',only:'6/8',grid:12,rows:[[DK.kick,'X-----------'],[DK.rim,'------x-----'],[DK.hhC,'x-o-x-x-o-x-']]},
+ jig:{name:'Jig (Irish)',g:'6/8',only:'6/8',grid:12,rows:[[DK.kick,'X-----x-----'],[DK.snare,'----x-----x-'],[DK.hhC,'x-x-x-x-x-x-']]},
+ afro68:{name:'Bembe 12/8-Bell',g:'6/8',only:'6/8',grid:12,rows:[[DK.cow,'X-x-xx-x-x-x'],[DK.kick,'X-----x-----'],[DK.congaH,'--x---x---x-'],[DK.shaker,'x-x-x-x-x-x-']]},
+ gospel68:{name:'Gospel 6/8',g:'6/8',only:'6/8',grid:12,rows:[[DK.kick,'X-----x-----'],[DK.snare,'------X-----'],[DK.hhC,'x-x-x-x-x-x-'],[DK.tamb,'------x-----']]},
+ doowop68:{name:'Doo-Wop 6/8 (Ride)',g:'6/8',only:'6/8',grid:12,rows:[[DK.ride,'X-x-x-x-x-x-'],[DK.kick,'X-----------'],[DK.snare,'------o-----']]}
 };
 var DRUMFILLS=[
  [[DK.snare,'x-xx-x-x'],[DK.t1,'-------x']],
@@ -3047,6 +3090,59 @@ var DRUMFILLS=[
  [[DK.snare,'--x-x-xx'],[DK.kick,'x-------']],
  [[DK.snare,'XxxXxxXx']]
 ];
+var DRUMFILLS34=[
+ [[DK.snare,'x-xx']],
+ [[DK.snare,'xxxx']],
+ [[DK.snare,'X-o-'],[DK.t2,'--x-'],[DK.t4,'---x']],
+ [[DK.t1,'x---'],[DK.t2,'-x--'],[DK.t4,'--xx']]
+];
+var DRUMFILLS68=[
+ [[DK.snare,'x-xx-x']],
+ [[DK.snare,'xxxxxx']],
+ [[DK.snare,'X--x--'],[DK.t2,'--x---'],[DK.t4,'-----x']],
+ [[DK.t1,'x-x---'],[DK.t2,'---x--'],[DK.t4,'----xx']]
+];
+/* Welche Styles es in welcher Taktart gibt. 4/4: alles ausser den
+   taktart-eigenen (STYLE_ONLY). 3/4 und 6/8: Whitelist - eine Auswahl,
+   die 43 Eintraege zeigt, von denen 15 Muell produzieren, ist schlechter
+   als eine mit 12 richtigen (METER-ANALYSE). */
+var STYLE_ONLY={waltz:'3/4',waltzRun:'3/4',waltzComp:'3/4',jazzWaltzComp:'3/4',
+  ballad68:'6/8',blues68:'6/8',jig:'6/8',comp68:'6/8',swell68:'6/8'};
+var METER_ALLOW={
+ '3/4':{
+  bass:['waltz','waltzRun','walking','country','pedal','rootFive','octaves','arp8','tenths','sub'],
+  chords:['waltzComp','jazzWaltzComp','pad','shells','push','broken','strum','tremolo','blockBeats','cine','quartal'],
+  melody:['guideTones','ambient']},
+ '6/8':{
+  bass:['ballad68','blues68','jig','walking','pedal','octaves','rootFive','arp8','sub'],
+  chords:['comp68','swell68','pad','shells','broken','tremolo','cine','quartal'],
+  melody:['guideTones','ambient']}
+};
+function styleAllowed(laneId,sid){
+  if(laneId==='drums'){
+    var P=DRUMPAT[sid]; if(!P)return false;
+    if(P.only)return P.only===METER.id;
+    if(METER.id==='4/4')return true;
+    return !!(P.meters&&P.meters[METER.id]);
+  }
+  if(STYLE_ONLY[sid])return STYLE_ONLY[sid]===METER.id;
+  var al=METER_ALLOW[METER.id]; if(!al)return true;
+  var list=al[laneId]; if(!list)return true;
+  return list.indexOf(sid)>=0;
+}
+function meterDefaultStyle(laneId){
+  var d={'3/4':{drums:'waltz',bass:'waltz',chords:'waltzComp',melody:'guideTones'},
+         '6/8':{drums:'blues68',bass:'ballad68',chords:'comp68',melody:'guideTones'},
+         '4/4':{drums:'rock8',bass:'rootFive',chords:'pad',melody:'guideTones'}}[METER.id];
+  return d?d[laneId]:null;
+}
+function drumPatFor(P){
+  if(!P)return null;
+  if(P.only)return P.only===METER.id?P:null;
+  if(METER.id==='4/4')return P;
+  var v=P.meters&&P.meters[METER.id];
+  return v?{name:P.name,g:P.g,grid:v.grid,rows:v.rows}:null;
+}
 var DRUMKITS=[[0,'Standard Kit'],[8,'Room Kit'],[16,'Power Kit'],[24,'Electronic Kit'],[25,'TR-808 Kit'],[32,'Jazz Kit'],[40,'Brush Kit'],[48,'Orchestra Kit']];
 (function(){
   var arr=[];
@@ -3716,8 +3812,32 @@ function genBass(lane,bars,ctx){
     var t0=bi*BAR, sc=scaleOf(b.type), th=thirdOf(b.type), f5=fifthOf(b.type), s7=seventhOf(b.type);
     var M6=sc[5];                       // Sexte aus der Akkordskala, nicht pauschal die große Sexte
     var V=lane.vel;
-    function n(t,m,v,d){ if(m<12||m>108)return; ev.push({t:t0+t,m:m,v:clamp(Math.round(v),25,127),d:Math.max(30,Math.round(d))}); }
+    function n(t,m,v,d){ if(m<12||m>108||t>=BAR)return; ev.push({t:t0+t,m:m,v:clamp(Math.round(v),25,127),d:Math.max(30,Math.round(d))}); }
     var st=lane.style;
+    /* Taktart-eigene Figuren zuerst; alles andere faellt in die 4/4-Kette,
+       deren Ereignisse ueber den Guard in n() am Taktende abgeschnitten
+       werden (die Auswahl zeigt ohnehin nur Taugliches, siehe METER_ALLOW). */
+    var mhandled=true;
+    if(METER.id==='3/4'){
+      if(st==='waltz'){ n(0,base,V,Q*1.7); if(chance(rng,0.6))n(2*Q,base+f5,V-14,Q*0.85); }
+      else if(st==='waltzRun'){ n(0,base,V,Q*0.92); n(Q,base+(chance(rng,0.5)?th:f5),V-8,Q*0.9);
+        var ap3=chance(rng,0.6)?nextBase-1:nextBase+2; n(2*Q,ap3,V-10,Q*0.9); }
+      else if(st==='walking'){ n(0,base,V,Q*0.9); n(Q,base+(chance(rng,0.5)?th:f5),V-8,Q*0.88);
+        var ap=chance(rng,0.5)?nextBase-1:nextBase+1; n(2*Q,ap,V-9,Q*0.88);
+        if(cx>0.55&&chance(rng,0.4))n(2*Q+E8,ap+(ap<nextBase?1:-1),V-18,E8*0.8); }
+      else if(st==='country'){ n(0,base,V,Q*0.9); n(Q,base+f5-12,V-9,Q*0.9); n(2*Q,base+f5-12,V-11,Q*0.88); }
+      else mhandled=false;
+    }else if(METER.id==='6/8'){
+      if(st==='ballad68'){ n(0,base,V,720*0.95); n(720,base+(chance(rng,0.5)?f5:th),V-8,720*0.9); }
+      else if(st==='blues68'){ n(0,base,V,720*0.9); n(720,base+f5,V-8,480*0.9);
+        if(chance(rng,dn+0.3))n(1200,base+M6,V-14,240*0.85); }
+      else if(st==='jig'){ var run=[0,f5,12,0,f5,12];
+        for(var j8=0;j8<6;j8++){ if(j8%3&&rng()>dn+0.35)continue; n(j8*240,base+run[j8],V-(j8%3?10:0),240*0.85); } }
+      else if(st==='walking'){ n(0,base,V,720*0.9); n(720,base+(chance(rng,0.5)?f5:th),V-8,480*0.9);
+        var ap6=chance(rng,0.6)?nextBase-1:nextBase+1; n(1200,ap6,V-12,240*0.85); }
+      else mhandled=false;
+    }else mhandled=false;
+    if(!mhandled)
     if(st==='walking'){
       var appr = chance(rng,0.5)? nextBase-1 : nextBase+1;
       if(cx<0.3)appr=base+f5;
@@ -3849,11 +3969,26 @@ function genChords(lane,bars,ctx){
     var mode = st==='quartal'?'quartal' : (st==='compSwing'?'rootless' : (st==='pad'||st==='gospel128')?'spread' : (cx>65?'drop2':'close'));
     var vo=placeVoicing(buildVoicing(base,b.type,mode,cx,rng),12*(lane.oct+1)-3);
     function hit(t,vel,dur,voi){
+      if(t>=BAR)return;
       var vv=voi||vo;
       for(var i=0;i<vv.length;i++){ if(vv[i]<12||vv[i]>108)continue;
         ev.push({t:t0+t,m:vv[i],v:clamp(Math.round(vel-i*2.5),25,127),d:Math.max(40,Math.round(dur))}); }
     }
-    if(st==='pad'){ hit(0,V-6,BAR*0.97); }
+    /* Taktart-eigene Comping-Figuren zuerst (siehe METER_ALLOW). */
+    var chandled=true;
+    if(METER.id==='3/4'){
+      if(st==='waltzComp'){ if(chance(rng,0.35))hit(0,V-14,E8*0.7); hit(Q,V,E8*0.85); hit(2*Q,V-6,E8*0.8); }
+      else if(st==='jazzWaltzComp'){ hit(0,V-6,Q*0.9); hit(Q+E8,V-2,E8*0.7);
+        if(cx>55&&chance(rng,0.4))hit(2*Q+E8,V-12,E8*0.6); }
+      else chandled=false;
+    }else if(METER.id==='6/8'){
+      if(st==='comp68'){ hit(0,V,720*0.9); hit(720,V-6,720*0.85);
+        if(cx>55&&chance(rng,0.45))hit(1200,V-14,240*0.8); }
+      else if(st==='swell68'){ hit(0,V-8,BAR*0.97); }
+      else chandled=false;
+    }else chandled=false;
+    if(chandled){}
+    else if(st==='pad'){ hit(0,V-6,BAR*0.97); }
     else if(st==='stabs'){ hit(E8+Q,V,E8*0.55); hit(3*Q+E8,V-4,E8*0.55); if(en>0.7&&chance(rng,0.5))hit(Q*2,V-12,E8*0.5); }
     else if(st==='charleston'){ hit(0,V,E8*0.7); hit(Q+E8,V-3,Q*0.9); }
     else if(st==='compSwing'){
@@ -3866,7 +4001,7 @@ function genChords(lane,bars,ctx){
     else if(st==='gospel128'){ hit(0,V,Q*1.2); hit(4*T8,V-6,Q*1.2); hit(8*T8,V-3,Q*1.2); if(cx>60)hit(11*T8,V-14,T8*0.8); }
     else if(st==='tremolo'){
       var alt=vo.slice(); alt.push(alt.shift()+12);
-      for(var i7=0;i7<16;i7++){ if(rng()>dn+0.4)continue; hit(i7*S16,V-(i7%2?10:0),S16*0.85,(i7%2)?alt:vo); }
+      for(var i7=0;i7<BAR/S16;i7++){ if(rng()>dn+0.4)continue; hit(i7*S16,V-(i7%2?10:0),S16*0.85,(i7%2)?alt:vo); }
     }
     else if(st==='push'){ hit(0,V,Q*1.7); hit(2*Q-E8,V-4,Q*1.9); }
     else if(st==='funk16'){
@@ -3890,6 +4025,7 @@ function genChords(lane,bars,ctx){
     else if(st==='strum'){
       var pat=[1,0,1,1,0,1,1,0,1,0,1,1,0,1,1,0], sp=9;
       for(var sg=0;sg<16;sg++){
+        if(sg*S16>=BAR)break;
         if(!pat[sg])continue;
         if(sg%4!==0&&rng()>dn+0.25)continue;
         var down=(sg%4===0||sg%4===2), vv=V-(down?0:12)-Math.round(rng()*6);
@@ -3903,6 +4039,7 @@ function genChords(lane,bars,ctx){
     else if(st==='broken'){
       var bo=[0,2,1,2,0,2,1,2];
       for(var br=0;br<8;br++){
+        if(br*E8>=BAR)break;
         if(br%2===1&&rng()>dn+0.25)continue;
         var mm=vo[bo[br]%vo.length];
         if(br===0&&vo.length)mm=vo[0];
@@ -3928,6 +4065,7 @@ function genChords(lane,bars,ctx){
       var mo=[0,1,2,2,1,0,1,2], mv=vo.slice();
       if(mv.length<3)mv=mv.concat(mv);
       for(var mn=0;mn<8;mn++){
+        if(mn*E8>=BAR)break;
         if(mn%2===1&&rng()>dn+0.3)continue;
         var mm2=mv[mo[mn]%mv.length]+((mn>3)?12:0);
         if(mm2<12||mm2>108)continue;
@@ -4187,13 +4325,15 @@ function genMelody(lane,bars,ctx){
 var taFill=true;
 function genDrums(lane,bars,ctx){
   var ev=[],en=ctx.energy/100,dn=lane.dens/100,V=lane.vel;
-  var P=DRUMPAT[lane.style]||DRUMPAT.rock8;
+  var P0=DRUMPAT[lane.style]||DRUMPAT.rock8;
+  var P=drumPatFor(P0)||drumPatFor(DRUMPAT[meterDefaultStyle('drums')])||P0;
   var grid=P.grid||16, step=BAR/grid, maxLen=0;
   for(var r0=0;r0<P.rows.length;r0++)if(P.rows[r0][1].length>maxLen)maxLen=P.rows[r0][1].length;
   var patBars=Math.max(1,Math.round(maxLen/grid));
   var fillEvery=lane.fill||0;
   for(var bi=0;bi<bars.length;bi++){
     var rng=rngFor(lane,bi+90210,bi), t0=bi*BAR, off=(bi%patBars)*grid;
+    var fillFromStep=(METER.id==='3/4')?Math.round(grid*2/3):Math.round(grid/2);
     var isFill=fillEvery>0&&bars.length>1&&((bi+1)%fillEvery===0);
     /* Turnaround-Fill: der letzte Takt der Form wird immer markiert, sonst
        klingt Takt 12 wie Takt 4 und die Form verschwimmt beim Üben. */
@@ -4205,7 +4345,7 @@ function genDrums(lane,bars,ctx){
       for(var s=0;s<grid;s++){
         var c=mask.charAt((off+s)%mask.length);
         if(c!=='x'&&c!=='X'&&c!=='o')continue;
-        if(isFill&&s>=grid/2&&note!==DK.kick&&note!==DK.kick2)continue;   // zweite Takthälfte gehört dem Fill
+        if(isFill&&s>=fillFromStep&&note!==DK.kick&&note!==DK.kick2)continue; // Fill-Zone gehoert dem Fill
         if(!essential||c==='o'){ if(rng()>dn+0.3)continue; }
         var vel=(V+(c==='X'?14:(c==='o'?-42:0))-Math.round(rng()*7))*(0.82+en*0.28);
         ev.push({t:t0+s*step,m:note,v:clamp(Math.round(vel),18,127),d:Math.max(30,Math.round(step*0.8))});
@@ -4213,10 +4353,12 @@ function genDrums(lane,bars,ctx){
     }
     if(groupStart&&en>0.45)
       ev.push({t:t0,m:DK.crash,v:clamp(Math.round(V*0.92),30,127),d:Q});
-    if(en>0.8&&!isFill&&chance(rng,0.35))
+    if(en>0.8&&!isFill&&METER.id==='4/4'&&chance(rng,0.35))
       ev.push({t:t0+(10+Math.floor(rng()*5))*S16,m:DK.kick,v:clamp(Math.round(V*0.78),25,127),d:S16});
     if(isFill){
-      var F=DRUMFILLS[Math.floor(rng()*DRUMFILLS.length)];
+      var FL=(METER.id==='3/4')?DRUMFILLS34:(METER.id==='6/8')?DRUMFILLS68:DRUMFILLS;
+      var F=FL[Math.floor(rng()*FL.length)];
+      var fillT0=(METER.id==='6/8')?720:2*Q;
       for(var fi=0;fi<F.length;fi++){
         var fn=F[fi][0], fm=F[fi][1];
         for(var fs=0;fs<fm.length;fs++){
@@ -4224,7 +4366,7 @@ function genDrums(lane,bars,ctx){
           if(fc!=='x'&&fc!=='X'&&fc!=='o')continue;
           if(fc==='o'&&rng()>dn)continue;
           var fv=V+(fc==='X'?12:(fc==='o'?-38:-2))-Math.round(rng()*6);
-          ev.push({t:t0+2*Q+fs*S16,m:fn,v:clamp(Math.round(fv),20,127),d:Math.round(S16*0.85)});
+          ev.push({t:t0+fillT0+fs*S16,m:fn,v:clamp(Math.round(fv),20,127),d:Math.round(S16*0.85)});
         }
       }
     }
@@ -4253,13 +4395,16 @@ function laneSwing(L){
    Blues-Shuffle liegt bei 62-68, Slow Blues 12/8 bei 95-100. */
 function applySwing(ev,amt){
   if(amt<=0)return ev;
-  var shift=Math.round((amt/100)*(E8/3));
+  /* Swing-Einheit aus der Taktart: 4/4 und 3/4 swingen das Viertel,
+     6/8 die punktierte Viertel (die Zaehlzeit). */
+  var U=METER.swingUnit, Uh=U/2, Uq=U/4;
+  var shift=Math.round((amt/100)*(Uh/3));
   if(shift<=0)return ev;
   for(var i=0;i<ev.length;i++){
-    var r=((ev[i].t%Q)+Q)%Q;
-    if(r===E8){ ev[i].t+=shift; ev[i].d=Math.max(30,Math.round(ev[i].d-shift*0.4)); }
-    else if(r===S16){ ev[i].t+=Math.round(shift*0.5); ev[i].d=Math.max(30,Math.round(ev[i].d-shift*0.25)); }
-    else if(r===3*S16){ ev[i].t+=Math.round(shift*(amt>60?0.85:0.5)); ev[i].d=Math.max(30,Math.round(ev[i].d-shift*0.25)); }
+    var r=((ev[i].t%U)+U)%U;
+    if(r===Uh){ ev[i].t+=shift; ev[i].d=Math.max(30,Math.round(ev[i].d-shift*0.4)); }
+    else if(r===Uq){ ev[i].t+=Math.round(shift*0.5); ev[i].d=Math.max(30,Math.round(ev[i].d-shift*0.25)); }
+    else if(r===3*Uq){ ev[i].t+=Math.round(shift*(amt>60?0.85:0.5)); ev[i].d=Math.max(30,Math.round(ev[i].d-shift*0.25)); }
   }
   /* Die Note VOR dem verschobenen Offbeat darf nicht in ihn hineinlaufen. */
   ev.sort(function(a,b){return a.t-b.t;});
@@ -4296,7 +4441,8 @@ function applyBackbeat(ev,L){
   var up=amt*0.6, dn=amt*0.4, tol=S16*0.7;
   for(var i=0;i<ev.length;i++){
     var r=((ev[i].t%BAR)+BAR)%BAR;
-    var on24=Math.min(Math.abs(r-Q),Math.abs(r-3*Q))<=tol;
+    var on24=false;
+    for(var b9=0;b9<METER.backbeats.length;b9++)if(Math.abs(r-METER.backbeats[b9])<=tol){on24=true;break;}
     if(on24){
       var k=(L.id==='drums')?(BACKBEAT_DRUMS[ev[i].m]?1:0.22):0.55;
       ev[i].v=clamp(Math.round(ev[i].v+up*k),12,127);
@@ -4341,7 +4487,7 @@ function applyArrangement(ev,L,st){
   var out=[];
   for(var i=0;i<ev.length;i++){
     var e=ev[i], rb=((e.t%BAR)+BAR)%BAR;
-    var onQ=(rb%Q)===0, on13=(rb===0||rb===2*Q), on1=(rb===0);
+    var onQ=(rb%METER.pulseTicks)===0, on13=(METER.arrOn.indexOf(rb)>=0), on1=(rb===0);
     var keep=true;
     if(L.id==='drums'){
       if(e.m===DK.crash||e.m===DK.crash2||e.m===DK.splash||e.m===DK.hhO)keep=(lv>=2);
@@ -4368,7 +4514,7 @@ function applyChorus(ev,L,st){
       if(ev[i].m===DK.hhC){
         /* Im Spitzen-Chorus nur die Viertel auf die Glocke – eine durchgehende
            Ride-Bell auf allen Achteln ist kein Drummer, das ist ein Wecker. */
-        var onQ=((((ev[i].t%Q)+Q)%Q)===0);
+        var pt=METER.pulseTicks, onQ=((((ev[i].t%pt)+pt)%pt)===0);
         ev[i].m=(f>0.85&&onQ)?DK.bell:DK.ride;
       }
       else if(ev[i].m===DK.hhO)ev[i].m=DK.crash2;
@@ -5058,8 +5204,8 @@ function schedTick(){
       for(var k=0;k<cbs.length;k++)cbs[k].classList.remove('act');
       var cb=document.getElementById('cblock'+gBars[bi].ci); if(cb)cb.classList.add('act');
     }
-    var beat=Math.floor((curTick%BAR)/Q);
-    for(var j=0;j<4;j++){var dd=document.getElementById('b'+j);if(dd)dd.classList.toggle('on',j===beat);}
+    var beat=Math.floor((curTick%BAR)/METER.pulseTicks);
+    for(var j=0;j<4;j++){var dd=document.getElementById('b'+j);if(dd)dd.classList.toggle('on',j===beat&&j<METER.pulses);}
   }
 
   // Loop-Wechsel
@@ -5212,7 +5358,7 @@ function midiBytes(){
   var tracks=[];
   var mpq=Math.round(60000000/bpm);
   var meta=[0x00,0xFF,0x51,0x03,(mpq>>16)&255,(mpq>>8)&255,mpq&255,
-            0x00,0xFF,0x58,0x04,0x04,0x02,0x18,0x08,
+            0x00,0xFF,0x58,0x04,METER.smf[0],METER.smf[1],METER.smf[2],METER.smf[3],
             0x00,0xFF,0x03].concat(vlq(12)).concat(str2b('MIDI PERFECT'))
             .concat([0x00,0xFF,0x2F,0x00]);
   tracks.push(chunk('MTrk',meta));
@@ -5329,6 +5475,7 @@ function buildLanes(){
     d.style.borderLeftColor=L.color;
     var styleOpts='',lastG=null;
     LANE_STYLES[L.id].forEach(function(s){
+      if(!styleAllowed(L.id,s[0]))return;
       var g=s[2]||'';
       if(g!==lastG){ if(lastG!==null)styleOpts+='</optgroup>'; styleOpts+='<optgroup label="'+g+'">'; lastG=g; }
       styleOpts+='<option value="'+s[0]+'"'+(s[0]===L.style?' selected':'')+'>'+s[1]+'</option>';
@@ -5478,7 +5625,8 @@ function styleLabel(laneId,val){
   return val;
 }
 function randomStyle(L){
-  var a=LANE_STYLES[L.id]; if(!a||!a.length)return;
+  var a=(LANE_STYLES[L.id]||[]).filter(function(x){return styleAllowed(L.id,x[0]);});
+  if(!a.length)return;
   var v=L.style, guard=0;
   while(v===L.style&&guard++<20)v=a[Math.floor(Math.random()*a.length)][0];
   L.style=v;
@@ -5837,7 +5985,7 @@ function collectSetup(){
     v:SETUP_VER,
     ts:new Date().toISOString(),
     build:(suEl('buildTag')?suEl('buildTag').textContent:''),
-    glob:{bpm:suVal('bpm'),swing:suVal('swing'),human:suVal('human'),energy:suVal('energy'),
+    glob:{meter:METER.id,bpm:suVal('bpm'),swing:suVal('swing'),human:suVal('human'),energy:suVal('energy'),
           cplx:suVal('cplx'),mut:suVal('mut'),loop:suVal('loop'),inf:suOn('infTgl')},
     harm:{keyPc:suVal('keyPc'),keyMode:suVal('keyMode'),sev:suOn('sevTgl')},
     prog:{text:suVal('chordInput'),bars:suVal('barsPerChord'),defType:suVal('defType'),
@@ -5860,6 +6008,7 @@ function applySetup(S){
 
   /* --- global --- */
   var g=S.glob;
+  if(g.meter&&METERS[g.meter])setMeter(g.meter,true);
   ['bpm','swing','human','energy','cplx','mut','loop'].forEach(function(k){suPut(k,g[k]);});
   suToggle('infTgl',g.inf);
 
@@ -6259,6 +6408,42 @@ log('MIDI PERFECT 4 bereit · SPACE = Play/Stop · R = Reroll · D = Styles wür
 log('Styles gesamt: '+LANES.map(function(L){return L.name+' '+LANE_STYLES[L.id].length;}).join(' · ')+
     ' · Drum-Patterns: '+LANE_STYLES.drums.length+' · Band-Presets: '+Object.keys(BANDS).length,'i');
 initSetups();
+
+/* --- Taktart ------------------------------------------------------------ */
+var LS_METER='midiperfect4.meter';
+function updateBeatDots(){
+  for(var j=0;j<4;j++){var d=document.getElementById('b'+j);if(d)d.style.display=(j<METER.pulses)?'':'none';}
+}
+function setMeter(mid,quiet){
+  var m=METERS[mid]||METERS['4/4'];
+  var was=METER.id;
+  METER=m; BAR=m.barTicks;
+  var sel=gEl('meterSel'); if(sel&&sel.value!==m.id)sel.value=m.id;
+  /* Styles pruefen: was es in der Taktart nicht gibt, faellt auf deren
+     Standard - sichtbar im Protokoll, nicht heimlich. */
+  for(var i=0;i<LANES.length;i++){
+    var L=LANES[i];
+    if(!styleAllowed(L.id,L.style)){
+      var d=meterDefaultStyle(L.id);
+      if(d&&styleAllowed(L.id,d)){ L.style=d; if(!quiet)log(L.name+': Style in '+m.id+' nicht verf\u00fcgbar \u2192 '+styleLabel(L.id,d),'w'); }
+    }
+  }
+  buildLanes(); saveLaneState();
+  updateBeatDots();
+  if(playing){ stopTransport(false); if(!quiet)log('Taktartwechsel stoppt den Transport.','w'); }
+  try{localStorage.setItem(LS_METER,m.id);}catch(e){}
+  if(!quiet&&was!==m.id)
+    log('Taktart '+m.id+' \u2013 MIDI Clock \u00fcbertr\u00e4gt keine Taktart, in Cubase von Hand mitziehen. SMF-Export tr\u00e4gt sie korrekt.','w');
+  try{document.dispatchEvent(new CustomEvent('mp-meter'));}catch(e){}
+}
+(function(){
+  var sel=gEl('meterSel');
+  if(sel)sel.addEventListener('change',function(){setMeter(this.value);});
+  var saved=null; try{saved=localStorage.getItem(LS_METER);}catch(e){}
+  if(saved&&METERS[saved]&&saved!=='4/4')setMeter(saved,true);
+  updateBeatDots();
+})();
+
 document.getElementById('langTgl').onclick=function(){ setLang(LANG==='en'?'de':'en'); };
 initI18n();
 
@@ -6481,14 +6666,19 @@ function addI18n(){
    MP3TAB-Haken im Scheduler, zeitgenau zum hörbaren Note-On. */
 var pianoOn=[1,1,1,1,1], tabOn=[0,1,1,1,1];      // Drums im Tab per Default aus
 var TABSTR=[64,59,55,50,45,40], TABNAM=['e','B','G','D','A','E'], LANEAB=['Dr','Ba','Ch','Ar','Me'];
-var TABBARS=8, TABCPB=8;                          // 8 Takte, Achtel-Raster
+var TABBARS=8, TABCPB=8;                          // 8 Takte, Achtel-Raster (je Taktart)
+function tabMeterCells(){ return Math.max(4,Math.round((window.BAR||1920)/240)); }
 function buildTab(){
-  var t=el('tab'); if(!t)return; var h='',n=TABBARS*TABCPB,c;
+  var t=el('tab'); if(!t)return;
+  TABCPB=tabMeterCells();
+  var bc=(window.METER&&window.METER.id==='6/8')?3:2;   // Zellen pro Zaehlzeit
+  var h='',n=TABBARS*TABCPB,c;
+  t.style.gridTemplateColumns='14px repeat('+n+',minmax(0,1fr))';
   h+='<span class="ts"></span>';
   for(c=0;c<n;c++)h+='<span class="tch" id="tabh-'+c+'"></span>';
   for(var s=0;s<6;s++){
     h+='<span class="ts">'+TABNAM[s]+'</span>';
-    for(var c=0;c<n;c++)h+='<span class="tc'+(c%TABCPB===0?' tbar':(c%2===0?' tbeat':''))+'" id="tab-'+s+'-'+c+'"></span>';
+    for(var c=0;c<n;c++)h+='<span class="tc'+(c%TABCPB===0?' tbar':(c%bc===0?' tbeat':''))+'" id="tab-'+s+'-'+c+'"></span>';
   }
   h+='<div class="tab-cur" aria-hidden="true"></div>';
   h+='<div class="tab-play" id="tabPlay" aria-hidden="true"></div>';
@@ -6915,6 +7105,11 @@ if(suL)suL.addEventListener('click',function(){
   document.body.appendChild(suMenu);
   suL.setAttribute('aria-expanded','true');
   document.addEventListener('click',suMenuDoc,true);
+});
+
+/* Taktartwechsel der Engine: Raster neu aufbauen, Anzeige leeren. */
+document.addEventListener('mp-meter',function(){
+  buildTab(); tabWin=-1; tabBar=-1;
 });
 
 /* --- Start ------------------------------------------------------------- */

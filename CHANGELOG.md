@@ -3,6 +3,46 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-B — Taktarten 3/4 und 6/8 (Stufe 1 + 2)
+
+Die Engine kennt jetzt drei Taktarten: **4/4, 3/4 und 6/8** — wählbar unter
+Tempo & Feel, gespeichert im Setup und in `localStorage`.
+
+**Architektur (METER-ANALYSE.md, Stufe 1 + 2):** Die Engine ist seit diesem
+Build eine echte Quelldatei (`werkstatt/engine.js`), byte-identisch aus dem
+Build-A-Stand extrahiert — die ~270 Taktart-Stellen wären per Anker-Patch
+nicht mehr wartbar gewesen. MIDI PERFECT 2 wird zum Bauen nicht mehr gebraucht.
+
+**Was pro Taktart passiert:**
+
+- `METERS`-Tabelle: Taktlänge, Beats, Pulse, Swing-Einheit, Backbeats,
+  Arrangement-Schwerpunkte und SMF-Time-Signature pro Taktart. `BAR` ist
+  keine Konstante mehr.
+- **Drums:** 8 eigene 3/4-Patterns (Waltz, Jazz Waltz, Rock Waltz, Country,
+  Ballad, Brush, Folk, Tom Waltz) und 7 eigene 6/8-Patterns (Blues 6/8,
+  Rock 6/8, Ballad 6/8, Jig, Afro 6/8, Gospel, Doo-Wop) plus 4/4-Varianten
+  mit `meters`-Ableitung; eigene Fill-Banken (`DRUMFILLS34`/`68`).
+- **Bass:** eigene Stile Waltz, Waltz Run, Ballad 6/8, Blues 6/8, Jig;
+  Walking, Country u. a. taktartbewusst umgeschrieben.
+- **Chords:** Waltz Comp, Jazz Waltz Comp, Comp 6/8, Swell 6/8; Strum,
+  Broken, Montuno, Tremolo enden sauber an der Taktgrenze.
+- **Whitelists:** Pro Taktart sind nur musikalisch sinnvolle Stile wählbar
+  (Dropdowns gefiltert, Zufallsstil gefiltert, Fallback pro Lane).
+- **Swing** swingt in 3/4 auf der Viertel-, in 6/8 auf der Punktiert-
+  Viertel-Ebene; Backbeat-Akzente und Chorus-Dynamik folgen der Taktart.
+- **Anzeige:** Beat-Punkte (3 bzw. 2 Pulse), Tabulatur-Raster (12 bzw.
+  6 Zellen je Takt), Akkordzeile und Playhead rechnen mit der echten
+  Taktlänge; Taktartwechsel baut das Raster neu und stoppt den Transport.
+- **Export:** SMF schreibt die korrekte Time Signature (`FF 58`).
+
+**Regressionsnachweis 4/4:** deterministischer Golden-Master über
+`buildTake(true)` — alle 5 Lanes byte-identisch zum Build-A-Stand.
+**Altbefund** (nicht neu, nur dokumentiert): der SMF-Export würfelt in der
+„Variation pro Durchlauf" mit `Math.random` — zwei Exporte desselben Takes
+unterscheiden sich ab Durchlauf 2. Bleibt als offener Punkt notiert.
+
+**Bewusst noch nicht drin (Stufe 3):** 5/4, 7/8, Taktartwechsel im Song.
+
 ## MIDI PERFECT 4 — BUILD 2026-08-01-A (Versionsschnitt)
 
 Der Stand von Version 3, BUILD 2026-08-01-Q, wird **MIDI PERFECT 4** —

@@ -19,6 +19,15 @@ hat einen eigenen Speicher-Namensraum (`midiperfect4.*`) — Version 3
 behält ihre Setups; Transfer per „.json sichern / laden" im Bereich
 Export & Setups. Die Build-Zählung beginnt neu bei A.
 
+**Taktarten (seit Build B):** Die Engine spielt **4/4, 3/4 und 6/8** —
+wählbar unter Tempo & Feel. Pro Taktart eigene Drum-Patterns (Waltz-Familie,
+6/8-Familie), eigene Bass- und Chord-Stile, gefilterte Stil-Listen, taktart-
+bewusstes Swing/Backbeat/Arrangement, korrekte SMF-Time-Signature und ein
+mitrechnendes Tabulatur-Raster. Die Engine ist dafür eine echte Quelldatei
+geworden: `werkstatt/engine.js`. Details in
+[werkstatt/METER-ANALYSE.md](werkstatt/METER-ANALYSE.md) (Stufe 1 + 2
+umgesetzt; 5/4, 7/8 und Taktartwechsel im Song sind Stufe 3).
+
 | Dokument | Inhalt |
 |---|---|
 | [ARCHITEKTUR.md](ARCHITEKTUR.md) | Schichten, Bau, Scheduler, Tabulatur-System |
