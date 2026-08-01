@@ -342,7 +342,8 @@ function tabPreview(startBar,blockStart,nBars){
     if(on&&!prevOn){tabBar=-1;tabWin=-1;clearTab();}
     prevOn=on;
     var p=null;
-    if(on&&!document.hidden&&typeof window.curMpt==='function'){
+    var waiting=(typeof window.extSlaving==='function')&&extSlaving()&&window.ext&&!window.ext.running;
+    if(on&&!waiting&&!document.hidden&&typeof window.curMpt==='function'){
       var mpt=curMpt();
       if(mpt){
         var t=sc.tickRef+(performance.now()-sc.msRef)/mpt;

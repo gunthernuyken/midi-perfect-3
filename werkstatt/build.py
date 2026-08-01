@@ -9,7 +9,7 @@ import io, re, sys
 
 MP2   = '/tmp/out/MIDI PERFECT 2.html'
 DST   = '/tmp/mp3/MIDI PERFECT 3.html'
-BUILD = 'BUILD 2026-08-01-J'
+BUILD = 'BUILD 2026-08-01-K'
 
 src   = io.open(MP2, encoding='utf-8').read()
 css   = io.open('/tmp/design/mp3.css', encoding='utf-8').read()
@@ -139,6 +139,18 @@ document.addEventListener('visibilitychange',function(){
   LOOKAHEAD=document.hidden?LOOKAHEAD_BG:LOOKAHEAD_FG;
 });""",
     'Worker-Ticker')
+# --- 3d Clock-Slave: im Wartezustand nicht schedulen ----------------------
+# Stand SLAVE auf AN, aber die DAW lieferte (noch) keine Clock, interpolierte
+# schedTick trotzdem ab Play munter weiter - bis die 4-Sekunden-Resynchro-
+# nisation die Zeitbasis zurueckriss: erster Takt spielt, dann Stille
+# (bei 81 BPM sind 4000 ms exakt 1,35 Takte). Der Transport meldet zwar
+# "wartet auf das Start-Signal der DAW", gewartet hat aber nur die Anzeige.
+engine = sub1(engine,
+    "  var slave=extSlaving();\n",
+    "  var slave=extSlaving();\n"
+    "  if(slave&&!ext.running)return;      // SLAVE wartet auf die DAW - erst das Start-Signal oeffnet den Hahn\n",
+    'Slave-Wartezustand')
+
 # Der Visual-Timer reicht zusaetzlich Lane-Nummer und Tick durch: die Huelle
 # filtert damit die Klaviatur pro Lane und zeichnet die Tabulatur (MP3TAB),
 # zeitgenau zum hoerbaren Note-On. Note-Off laeuft ungefiltert, damit beim
