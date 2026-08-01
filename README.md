@@ -6,6 +6,17 @@ Build, kein Server, keine Abhängigkeit, kein CDN.
 **Nur Chrome oder Edge.** Web MIDI ist in Safari und Firefox nicht
 implementiert; ohne Web MIDI gibt es keine Klangausgabe.
 
+**Live:** <https://gunthernuyken.github.io/midi-perfect-3/> — läuft direkt
+im Browser, Setups bleiben lokal (localStorage, getrennt von der Datei-
+Version).
+
+| Dokument | Inhalt |
+|---|---|
+| [ARCHITEKTUR.md](ARCHITEKTUR.md) | Schichten, Bau, Scheduler, Tabulatur-System |
+| [CHANGELOG.md](CHANGELOG.md) | Builds mit Problem/Ursache/Änderung |
+| [CUBASE-SETUP.md](CUBASE-SETUP.md) | IAC, Spur-Routing, Clock/MMC, Fallen |
+| [werkstatt/](werkstatt/) | Quellen, aus denen die HTML-Datei gebaut wird |
+
 ---
 
 ## Was sich gegenüber MIDI PERFECT 2 ändert
@@ -20,7 +31,7 @@ Version 3 ist dieselbe Anwendung als **Werkzeug mit Bereichen**:
 | Transportleiste oben | scrollt nie weg — Play/Stop/Reroll, Takt-Zähler, Beat-Punkte, Lane-Schalter, Setup-Knopf |
 | Seitenleiste links | sieben Bereiche, einklappbar auf reine Symbole |
 | Inhalt | genau ein Bereich sichtbar, passt bei 1440 × 900 **ohne Scrollen** |
-| Klaviatur unten | auf allen Bereichen sichtbar, einklappbar |
+| Klaviatur + Tabulatur unten | auf allen Bereichen sichtbar, einklappbar, Lane-Filter je Anzeige |
 
 ### Die sieben Bereiche
 
@@ -87,6 +98,63 @@ beim Spielen gebraucht. Bereiche liegen deshalb auf Alt/Option.
   2,94 → 10,78; Feld-Etiketten von 4,39 → 7,29; die Grenze aller
   Bedienelemente von 2,08 → 4,46; Play-Knopf 1,77 → 10,71. Die fünf
   Lane-Identitätsfarben bleiben unangetastet.
+
+## Timing im Hintergrund (Build 2026-08-01-B)
+
+Chrome drosselt `setInterval` in Hintergrund-Tabs auf ≥ 1 Sekunde — genau
+dann, wenn Cubase den Fokus hat. Der 20-ms-Scheduler-Tick verhungerte, die
+220-ms-Queue lief leer: das war das Ruckeln beim Wechsel zur DAW.
+
+- Der Tick kommt jetzt aus einem **Web Worker** — Worker-Timer sind von der
+  Drosselung ausgenommen. Fällt die Worker-Erzeugung aus, greift
+  `setInterval` als Rückfallebene (mit Warnung im Protokoll).
+- Der Lookahead wächst im Hintergrund von 220 auf 600 ms. Stop und
+  Tempoänderung sind Vordergrund-Aktionen — dort bleibt er kurz, damit beides
+  sofort greift.
+- Klaviatur-Beleuchtung und Taktzähler pausieren bei verstecktem Tab. Das
+  waren zwei `setTimeout` pro Note plus DOM-Arbeit, die niemand sieht.
+
+Empfehlung: Chromes „Speicher sparen" (Einstellungen → Leistung) für diese
+Seite ausnehmen, sonst kann der Tab nach langer Inaktivität ganz eingefroren
+werden — dagegen hilft auch kein Worker.
+
+## Klaviatur & Tabulatur (Build 2026-08-01-C)
+
+Das Dock unten teilt sich in Klaviatur (kompakt links, scrollt intern) und
+**Tabulatur** über die restliche Breite. Die Tabulatur zeichnet ein Fenster
+von **8 Takten** im Achtel-Raster in Standard-Stimmung (e B G D A E):
+Bundzahlen erscheinen zeitgenau zum hörbaren Note-On auf der Saitenlinie,
+der laufende Takt ist hinterlegt und ein **Playhead** führt als leuchtende
+Linie durch das Raster (aus der Scheduler-Position berechnet, auch im
+Clock-Slave korrekt). Kräftige Striche markieren Taktanfänge,
+feine die Viertel. Zwei 16tel im selben Achtel stehen nebeneinander in der
+Zelle. Der Umschalter neben den Tab-Filtern wählt zwischen zwei Modi
+(gespeichert in `midiperfect3.ui.v1`):
+
+| Modus | Verhalten |
+|---|---|
+| ▦ Fenster | 8 Takte füllen sich, geleert wird beim Eintritt ins nächste Fenster |
+| ⇄ Scroll | pro Taktwechsel rückt alles einen Takt nach links; der laufende Takt steht fest in der Mitte, links die Historie |
+
+**Vorschau:** Beide Modi zeichnen Kommendes **gedimmt** vor — die Engine
+kennt den ganzen Take (`sched.ev`). Im Fenster-Modus erscheint das komplette
+8-Takte-Fenster sofort als Vorschau, im Scroll-Modus der laufende Takt und
+drei Folgetakte; am Loop-Ende läuft die Vorschau in den Anfang des nächsten
+Chorus weiter. Beim echten Note-On wird die Zahl fest. Gedimmt Stehendes
+wurde geplant, aber nicht gespielt (Lane aus) — auch das ist Information.
+Nach Reroll/Mutation zieht die Vorschau beim nächsten Taktwechsel nach.
+
+- **Lane-Filter je Anzeige:** fünf Schalter (Dr Ba Ch Ar Me) neben jeder
+  Beschriftung. Sie filtern nur die *Anzeige* — was klingt, entscheidet
+  weiterhin allein der Lane-Schalter im Transport. Voreinstellung:
+  Klaviatur alle, Tabulatur alle außer Drums. Der Zustand überlebt den
+  Reload (`midiperfect3.ui.v1`).
+- **Saitenwahl:** kleinster Bund gewinnt; ist die Zelle belegt, weicht die
+  Note auf die nächste freie Saite aus. Noten außerhalb des Griffbereichs
+  (Bass!) werden oktaviert. Drums erscheinen als × auf der E-Zeile.
+- Die Engine liefert die Ereignisse über den `MP3TAB`-Haken im Scheduler;
+  die Klaviatur filtert über eine Hülle um `litKey`. Note-Off läuft
+  ungefiltert, damit beim Abschalten keine Taste hängen bleibt.
 
 ---
 

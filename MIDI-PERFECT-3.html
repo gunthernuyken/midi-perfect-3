@@ -1474,7 +1474,8 @@ input[type="range"]:disabled::-webkit-slider-thumb { background: var(--c-text-di
 .vis-chip:hover{border-color:var(--lane);}
 .tab{
   display:grid;
-  grid-template-columns:14px repeat(64,minmax(0,1fr));\n  position:relative;
+  grid-template-columns:14px repeat(64,minmax(0,1fr));
+  position:relative;
   grid-template-rows:repeat(6,1fr);
   block-size:74px;
   font:600 10px/1 var(--ff-mono);
@@ -1502,9 +1503,17 @@ input[type="range"]:disabled::-webkit-slider-thumb { background: var(--c-text-di
   position:absolute;inset-block:0;
   inline-size:calc((100% - 14px)/8);
   inset-inline-start:calc(14px + (100% - 14px)*var(--bar,0)/8);
-  background:color-mix(in srgb,var(--c-accent) 7%,transparent);
+  background:color-mix(in srgb,var(--c-accent) 14%,transparent);
+  border-inline:1px solid color-mix(in srgb,var(--c-accent) 50%,transparent);
   pointer-events:none;
   transition:inset-inline-start var(--t-fast,.12s) linear;
+}
+.tab-play{
+  position:absolute;inset-block:0;inline-size:2px;
+  inset-inline-start:calc(14px + (100% - 14px)*var(--pos,0)/8);
+  background:var(--c-accent);
+  box-shadow:0 0 6px var(--c-accent);
+  opacity:0;pointer-events:none;
 }
 .tab .tc b{background:var(--c-rail);padding-inline:2px;font-weight:600;}
 .vis-mode{
@@ -1518,6 +1527,24 @@ input[type="range"]:disabled::-webkit-slider-thumb { background: var(--c-text-di
 }
 .vis-mode:hover{color:var(--c-text);border-color:var(--c-border-ctl);}
 .vis-mode[aria-pressed="true"]{color:var(--c-accent);border-color:color-mix(in srgb,var(--c-accent) 60%,transparent);background:var(--c-accent-wash);}
+
+/* Setup-Lade-Menue an der Transportleiste */
+.su-menu{
+  position:fixed;z-index:100;
+  display:flex;flex-direction:column;gap:2px;
+  padding:6px;min-inline-size:200px;max-block-size:60vh;overflow:auto;
+  background:#131326;
+  border:1px solid var(--c-border-ctl);
+  border-radius:var(--r-1);
+  box-shadow:0 8px 24px rgba(0,0,0,.55);
+}
+.su-menu button{
+  min-block-size:28px;padding-inline:10px;text-align:start;
+  background:none;border:1px solid transparent;border-radius:var(--r-1);
+  color:var(--c-text);font:500 var(--fs-sm)/1 var(--ff);cursor:pointer;
+}
+.su-menu button:hover{background:var(--c-accent-wash);border-color:var(--c-border-ctl);}
+.su-menu .su-empty{color:var(--c-text-mute);font:500 var(--fs-sm)/1.4 var(--ff);padding:6px;}
 
 /* ============================================================
    KOMPATIBILITÄTSSCHICHT
@@ -1914,6 +1941,7 @@ details[open]>summary .card-title{margin-block-end:var(--sp-3)}
   <span class="transport-spacer"></span>
   <span class="sbar"><span class="dot y" id="midiDot"></span><span class="hint nowrap" id="midiStatus">Initialisiere&hellip;</span></span>
   <button class="rh" id="btnSuQuick" title="Aktuellen Stand als Setup speichern (Cmd/Strg+S)">&#128190; Setup</button>
+  <button class="rh" id="btnSuQuickLoad" title="Gespeichertes Setup laden">&#128194; Laden</button>
   <button class="lang-toggle" id="langTgl" title="Sprache umschalten / switch language"><b>DE</b>&nbsp;&middot;&nbsp;EN</button>
 </header>
 
@@ -6408,7 +6436,8 @@ function buildTab(){
     h+='<span class="ts">'+TABNAM[s]+'</span>';
     for(var c=0;c<n;c++)h+='<span class="tc'+(c%TABCPB===0?' tbar':(c%2===0?' tbeat':''))+'" id="tab-'+s+'-'+c+'"></span>';
   }
-  h+='<div class="tab-cur" style="--bar:0" aria-hidden="true"></div>';
+  h+='<div class="tab-cur" aria-hidden="true"></div>';
+  h+='<div class="tab-play" id="tabPlay" aria-hidden="true"></div>';
   t.innerHTML=h;
 }
 function clearTab(){
@@ -6512,6 +6541,32 @@ function tabPreview(startBar,blockStart,nBars){
     tabDraw(e.m,li,(blockStart+rel)*TABCPB+sub,true);
   }
 }
+/* Playhead: laufende Linie an der aktuellen Scheduler-Position. Die Zeit
+   kommt aus sched (tickRef/msRef) - dieselbe Interpolation wie schedTick,
+   auch im Clock-Slave-Betrieb gueltig. Nur Anzeige, ein Style-Write pro
+   Frame, pausiert bei verstecktem Tab von selbst (rAF). */
+function tabPos(){
+  var sc=window.sched; if(!sc||!sc.on)return null;
+  if(typeof window.curMpt!=='function')return null;
+  var mpt=curMpt(); if(!mpt)return null;
+  var t=sc.tickRef+(performance.now()-sc.msRef)/mpt;
+  if(t<0)return null;                                  // Count-In
+  var BARt=window.BAR||1920;
+  var bar=Math.floor(t/BARt), frac=(t-bar*BARt)/BARt;
+  return tabMode==='scroll' ? 4+frac : (bar%TABBARS)+frac;
+}
+(function(){
+  function loop(){
+    var ph=el('tabPlay');
+    if(ph){
+      var p=document.hidden?null:tabPos();
+      if(p==null)ph.style.opacity='0';
+      else{ph.style.opacity='1';ph.style.setProperty('--pos',p);}
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
 window.MP3TAB={
   refresh:function(){ if(tabBar>=0)tabEnterBar(tabBar,true); },
   note:function(m,li,t){
@@ -6581,6 +6636,59 @@ function buildVisChips(boxId,state,key){
     if(key==='tabLanes'&&window.MP3TAB)MP3TAB.refresh();
   });
 }
+
+/* --- Setup-Schnellzugriff in der Transportleiste -----------------------
+   Der Speichern-Knopf der Engine arbeitete stumm (nur eine Log-Zeile, die
+   im gerade sichtbaren Bereich selten steht) und Laden gab es nur im
+   Bereich Export & Setups. Hier: sichtbare Bestaetigung am Knopf und ein
+   Lade-Menue direkt an der Leiste. Engine-Funktionen werden nur GENUTZT
+   (readSetups/loadSetupByName), nicht veraendert. */
+function flashBtn(b,txt){
+  if(b.dataset.flash)return;
+  b.dataset.flash='1';
+  var o=b.innerHTML; b.innerHTML=txt;
+  setTimeout(function(){b.innerHTML=o;delete b.dataset.flash;},1400);
+}
+var suQ=el('btnSuQuick');
+if(suQ)suQ.addEventListener('click',function(){flashBtn(suQ,'\u2713 Gespeichert');});
+document.addEventListener('keydown',function(e){
+  if((e.metaKey||e.ctrlKey)&&(e.key==='s'||e.key==='S')&&suQ)flashBtn(suQ,'\u2713 Gespeichert');
+},true);
+var suL=el('btnSuQuickLoad'), suMenu=null;
+function closeSuMenu(){
+  if(!suMenu)return;
+  suMenu.remove(); suMenu=null;
+  document.removeEventListener('click',suMenuDoc,true);
+  if(suL)suL.setAttribute('aria-expanded','false');
+}
+function suMenuDoc(e){ if(suMenu&&!suMenu.contains(e.target)&&e.target!==suL)closeSuMenu(); }
+if(suL)suL.addEventListener('click',function(){
+  if(suMenu){closeSuMenu();return;}
+  var names=[];
+  try{names=Object.keys(window.readSetups()||{}).sort();}catch(e){}
+  suMenu=document.createElement('div');
+  suMenu.className='su-menu';
+  suMenu.setAttribute('role','menu');
+  if(!names.length){
+    suMenu.innerHTML='<span class="su-empty">Noch kein Setup gespeichert \u2013 erst \u{1F4BE} Setup dr\u00fccken</span>';
+  }else{
+    names.forEach(function(n){
+      var b=document.createElement('button');
+      b.type='button'; b.setAttribute('role','menuitem'); b.textContent=n;
+      b.addEventListener('click',function(){
+        closeSuMenu();
+        if(window.loadSetupByName(n))flashBtn(suL,'\u2713 Geladen');
+      });
+      suMenu.appendChild(b);
+    });
+  }
+  var r=suL.getBoundingClientRect();
+  suMenu.style.insetInlineEnd=(window.innerWidth-r.right)+'px';
+  suMenu.style.insetBlockStart=(r.bottom+4)+'px';
+  document.body.appendChild(suMenu);
+  suL.setAttribute('aria-expanded','true');
+  document.addEventListener('click',suMenuDoc,true);
+});
 
 /* --- Start ------------------------------------------------------------- */
 function boot(){
