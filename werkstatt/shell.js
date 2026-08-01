@@ -261,35 +261,51 @@ function tabWipe(c0,c1){
     if(e2&&e2.childElementCount){e2.innerHTML='';e2.classList.remove('has');}
   }
 }
-function tabPut(s,c,txt,li,pre){
+function tabPut(s,c,txt,li,pre,frac){
   var e2=el('tab-'+s+'-'+c); if(!e2)return;
   var b=document.createElement('b');
   b.textContent=txt; b.style.color=window.LANES[li].color;
   b.setAttribute('data-li',li); if(pre)b.className='pre';
+  /* Echte Zeitposition statt Zellenmitte: Shuffle-Achtel und 12/8-Feel
+     stehen damit dort, wo sie klingen. */
+  b.style.setProperty('--fx',(Math.max(0,Math.min(1,frac||0))*100)+'%');
   e2.appendChild(b); e2.classList.add('has');
 }
-/* Saitenwahl: kleinster Bund, freie Saite bevorzugt; liefert [fret,string]. */
-function tabMap(m,col){
-  var n=m; while(n<40)n+=12; while(n>79)n-=12;
-  var cand=[];
-  for(var s=0;s<6;s++){var f=n-TABSTR[s];if(f>=0&&f<=15)cand.push([f,s]);}
-  if(!cand.length)return null;
-  cand.sort(function(a,b){return a[0]-b[0];});
-  for(var i=0;i<cand.length;i++){
-    var c2=el('tab-'+cand[i][1]+'-'+col);
-    if(c2&&!c2.childElementCount)return cand[i];
-  }
-  var best=el('tab-'+cand[0][1]+'-'+col);
-  return (best&&best.childElementCount<3)?cand[0]:null;
+/* Lagen-Heuristik: Die Saitenwahl orientiert sich an der LAGE des aktuellen
+   Akkords (Bund seiner Barre-Form aus pickShape) statt stur am kleinsten
+   Bund. Deterministisch - Vorschau und Live rechnen identisch - und
+   deckungsgleich mit dem Griffbild darueber. Ein Lauf bleibt in der Lage,
+   statt zwischen offener Lage und 5. Bund zu springen. */
+function tabLagePos(bar){
+  var e=chordBar(bar);
+  if(!e)return 3;
+  var base=pickShape(e.root,e.type).base;
+  return base>0?base:3;                       // offene Form: um den 3. Bund spielen
 }
-function tabDraw(m,li,col,pre){
+function tabMap(m,col,P){
+  var n=m; while(n<40)n+=12; while(n>79)n-=12;
+  if(P==null)P=3;
+  var best=null,bestCost=1e9;
+  for(var s=0;s<6;s++){
+    var f=n-TABSTR[s];
+    if(f<0||f>15)continue;
+    var cost=Math.abs(f-P);
+    if(f===0)cost=Math.min(cost,2.5);          // offene Saite bleibt idiomatisch erlaubt
+    if(f>0&&(f<P-1||f>P+4))cost+=1.5;          // ausserhalb des Vier-Bund-Fensters
+    var c2=el('tab-'+s+'-'+col);
+    if(c2&&c2.childElementCount)cost+=(c2.childElementCount<3?8:1000);
+    if(cost<bestCost){bestCost=cost;best=[f,s];}
+  }
+  return (bestCost<1000)?best:null;
+}
+function tabDraw(m,li,col,pre,frac,P){
   if(li===0){
     var dd=el('tab-5-'+col);
-    if(dd&&dd.childElementCount<3)tabPut(5,col,'\u00d7',li,pre);
+    if(dd&&dd.childElementCount<3)tabPut(5,col,'\u00d7',li,pre,frac);
     return;
   }
-  var hit=tabMap(m,col);
-  if(hit)tabPut(hit[1],col,String(hit[0]),li,pre);
+  var hit=tabMap(m,col,P);
+  if(hit)tabPut(hit[1],col,String(hit[0]),li,pre,frac);
 }
 /* Beim echten Note-On die gedimmte Vorschau-Zahl fest machen. */
 function tabLive(m,li,col){
@@ -327,8 +343,9 @@ function tabPreview(startBar,blockStart,nBars){
     var bar=Math.floor(e.t/BARt), rel=bar-startBar;
     if(loopBars&&rel<0)rel+=loopBars;
     if(rel<0||rel>=nBars)continue;
-    var sub=Math.min(TABCPB-1,Math.floor((e.t-bar*BARt)/(BARt/TABCPB)));
-    tabDraw(e.m,li,(blockStart+rel)*TABCPB+sub,true);
+    var cellT=BARt/TABCPB, inBar=e.t-bar*BARt;
+    var sub=Math.min(TABCPB-1,Math.floor(inBar/cellT));
+    tabDraw(e.m,li,(blockStart+rel)*TABCPB+sub,true,(inBar-sub*cellT)/cellT,tabLagePos(bar));
   }
 }
 /* Playhead: laufende Linie an der aktuellen Scheduler-Position. Die Zeit
@@ -384,13 +401,14 @@ window.MP3TAB={
     if(!tabOn[li]||t<0)return;
     var BARt=window.BAR||1920;
     var bar=Math.floor(t/BARt);
-    var sub=Math.min(TABCPB-1,Math.floor((t-bar*BARt)/(BARt/TABCPB)));
+    var cellT=BARt/TABCPB, inBar=t-bar*BARt;
+    var sub=Math.min(TABCPB-1,Math.floor(inBar/cellT));
     if(bar!==tabBar)tabEnterBar(bar);
     var col=(tabMode==='scroll')
       ? 4*TABCPB+sub
       : (bar%TABBARS)*TABCPB+sub;
     if(tabLive(m,li,col))return;                  // Vorschau-Zahl fest machen
-    tabDraw(m,li,col,false);                      // sonst regulaer setzen
+    tabDraw(m,li,col,false,(inBar-sub*cellT)/cellT,tabLagePos(bar));
   }
 };
 /* Taktwechsel: Fenster-Modus leert am Fensterrand und zeichnet die Vorschau
