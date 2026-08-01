@@ -8,8 +8,9 @@ Abgleichschleife und die Klapp-Panel-Logik, die der Router ersetzt.
 import io, re, sys
 
 MP2   = '/tmp/out/MIDI PERFECT 2.html'
-DST   = '/tmp/mp3/MIDI PERFECT 3.html'
-BUILD = 'BUILD 2026-08-01-Q'
+VER   = '4'
+DST   = '/tmp/mp3/MIDI PERFECT %s.html' % VER
+BUILD = 'BUILD 2026-08-01-A'
 
 src   = io.open(MP2, encoding='utf-8').read()
 css   = io.open('/tmp/design/mp3.css', encoding='utf-8').read()
@@ -220,6 +221,16 @@ out = sub1(out,
     '<small id="buildTag">BUILD 2026-08-01-A</small>',
     '<small id="buildTag">%s</small>' % BUILD,
     'Build-Kennung')
+# --- 6b Versionsschnitt: aus dem Stand wird MIDI PERFECT 4 ---------------
+# Gleicher Ordner, gleiche Werkstatt; 'MIDI PERFECT 3.html' bleibt als
+# eingefrorene Version 3 liegen. Eigener Speicher-Namensraum nach dem
+# Muster des V2->V3-Schnitts: Version 3 behaelt ihre Setups.
+if VER != '3':
+    out = out.replace('MIDI PERFECT&nbsp;3', 'MIDI PERFECT&nbsp;' + VER)
+    out = out.replace('MIDI PERFECT 3', 'MIDI PERFECT ' + VER)
+    out = out.replace('MIDI PERFECT 2 bereit', 'MIDI PERFECT ' + VER + ' bereit')
+    out = out.replace('midiperfect3.', 'midiperfect' + VER + '.')
+
 io.open(DST, 'w', encoding='utf-8').write(out)
 
 # --- 7 Abgleich: kennt die Huelle jede ID, die die Engine anspricht? ------
