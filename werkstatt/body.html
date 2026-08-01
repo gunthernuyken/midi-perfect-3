@@ -31,7 +31,7 @@
      SEITENLEISTE
      ============================================================ -->
 <nav class="rail" aria-label="Bereiche">
-  <div class="rail-brand"><span>MIDI PERFECT&nbsp;3<small id="buildTag">BUILD 2026-08-01-A</small></span></div>
+  <div class="rail-brand"><span>MIDI PERFECT&nbsp;4<small id="buildTag">BUILD 2026-08-01-A</small></span></div>
   <button class="rail-item" data-view="midi" aria-current="page">
     <span class="ico" aria-hidden="true">&#9889;</span><span class="label">MIDI &amp; Transport</span><kbd>1</kbd><span class="tip">MIDI &amp; Transport</span></button>
   <button class="rail-item" data-view="song">
@@ -105,6 +105,8 @@
         <div class="sl"><input type="range" id="energy" min="0" max="100" value="60"><span class="vd" id="energyVal">60</span></div>
         <label class="lbl" for="cplx">Complexity %</label>
         <div class="sl"><input type="range" id="cplx" min="0" max="100" value="45"><span class="vd" id="cplxVal">45</span></div>
+        <label class="lbl" for="meterSel">Taktart</label>
+        <select id="meterSel"><option value="4/4" selected>4/4</option><option value="3/4">3/4</option><option value="6/8">6/8</option></select>
         <label class="lbl" for="loop">Loop</label>
         <select id="loop">
           <option value="1">1x</option><option value="2">2x</option><option value="4" selected>4x</option>
@@ -307,7 +309,12 @@
 
   <details class="card card--full">
     <summary><h2 class="card-title"><span>&#9432; Hinweise zu Swing und Chorus</span></h2></summary>
-    <div class="hint2" id="hintBlues"></div>
+    <div class="hint2" id="hintBlues"><b style="color:#22cc88">Swing:</b> 100 % = volles Triolen-Feel. Blues-Shuffle sitzt bei <b>62&ndash;68</b>, Slow Blues 12/8 bei <b>95&ndash;100</b>,
+    Funk-Blues bei 12&ndash;20. Drum-Patterns auf Triolenraster (Blues Shuffle, Jazz Ride, Purdie) sind bereits triolisch notiert und werden
+    vom Swing-Regler bewusst nicht zusätzlich verschoben &ndash; sonst käme ein doppelter Shuffle heraus.<br>
+    <b style="color:#22cc88">Chorus-Dynamik</b> sendet den Expression-CC auf allen Melodie-/Harmonie-Kanälen. Bei einer Hammond (Blue3, B-3X)
+    kann man dort auch eine Drawbar-CC eintragen; bei Kontakt-Instrumenten passt meist CC11, bei EZbass/EZkeys CC7.
+    Die Hi-Hat wandert ab dem eingestellten Chorus automatisch aufs Ride, im Spitzen-Chorus auf die Glocke.</div>
   </details>
   </div>
 </section>
@@ -389,7 +396,20 @@
 
   <details class="card">
     <summary><h2 class="card-title"><span>&#9432; Anleitung</span></h2></summary>
-    <div class="hint2 scroll-y" id="hintSync"></div>
+    <div class="hint2 scroll-y" id="hintSync"><b style="color:#ffcc00">&#9888; Cubase kann sich nicht auf MIDI Clock synchronisieren.</b> Als Sync-Quelle akzeptiert Cubase ausschließlich
+    MIDI&nbsp;Timecode, ASIO&nbsp;Positioning oder VST&nbsp;System&nbsp;Link – siehe Projekt-Synchronisationseinstellungen &rarr; Quellen.
+    Der Clock-Schalter und der Clock-Burst sind daher für <b>Hardware</b> gedacht (Drumcomputer, Groovebox, Looper).
+    <b>Das Tempo muss in Cubase von Hand auf denselben Wert gesetzt werden.</b><br>
+    <b>Setup Play/Record (funktioniert):</b> Transport &rarr; Projekt-Synchronisationseinstellungen &rarr; Gerätesteuerung &rarr;
+    <b>MMC-Slave aktiv</b>, MIDI-Eingang = IAC-Treiber Bus 1, MMC-Gerätekennung identisch (127 = alle).
+    Record startet mit Record&nbsp;Strobe + Deferred&nbsp;Play. MMC braucht die SysEx-Freigabe des Browsers – Status siehe Log.<br>
+    <b>Count-In</b> lässt Cubase vorlaufen, bevor die erste Note kommt – ideal zum Aufnehmen.<br>
+    <b style="color:#22cc88">Clock-Slave (Cubase gibt den Takt vor):</b> Das ist die Richtung, die mit Cubase wirklich funktioniert.
+    In Cubase unter Projekt-Synchronisationseinstellungen &rarr; <b>Ziele</b> die <b>MIDI-Clock-Ausgabe auf den IAC-Bus</b> aktivieren,
+    hier <b>SLAVE</b> einschalten und denselben Bus als Clock-Eingang wählen. Ein IAC-Bus trägt beide Richtungen gleichzeitig –
+    ein zweiter Bus ist sauberer, aber nicht nötig. Danach starten und stoppen Cubases Transport diese Seite mit,
+    Tempo und Position kommen aus Cubase, der BPM-Regler folgt automatisch.
+    Clock-Ausgang und Slave schließen sich gegenseitig aus.</div>
   </details>
   </div>
 </section>
@@ -447,7 +467,12 @@
     </article>
     <details class="card">
       <summary><h2 class="card-title"><span>&#9432; Was ein Setup enth&auml;lt</span></h2></summary>
-      <div class="hint2" id="hintSetups"></div>
+      <div class="hint2" id="hintSetups">Ein Setup ist der komplette Arbeitsstand: <b>Tempo, Swing, Humanize, Energy, Complexity, Loop, Infinity</b>,
+    <b>Tonart und Modus</b>, die <b>Progression samt Takt-Locks</b>, die komplette <b>Blues-Werkstatt</b> inklusive
+    Chorus-Bogen, alle f&uuml;nf <b>Lanes</b> mit Style, Kanal, Sound, Velocity, Density, Swing und Seed sowie die
+    <b>Export-</b> und <b>Cubase-Optionen</b>. Nicht gespeichert werden MIDI-Ports &ndash; die geh&ouml;ren zur Maschine,
+    nicht zum St&uuml;ck, und bleiben beim Rechnerwechsel korrekt.
+    <br><b>Cmd/Strg+S</b> speichert sofort unter dem Namen im Feld; ist es leer, wird ein Name aus Tonart, Tempo und Uhrzeit gebaut.</div>
     </details>
   </div>
 </section>

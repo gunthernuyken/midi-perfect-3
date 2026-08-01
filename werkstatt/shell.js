@@ -215,14 +215,19 @@ function addI18n(){
    MP3TAB-Haken im Scheduler, zeitgenau zum hörbaren Note-On. */
 var pianoOn=[1,1,1,1,1], tabOn=[0,1,1,1,1];      // Drums im Tab per Default aus
 var TABSTR=[64,59,55,50,45,40], TABNAM=['e','B','G','D','A','E'], LANEAB=['Dr','Ba','Ch','Ar','Me'];
-var TABBARS=8, TABCPB=8;                          // 8 Takte, Achtel-Raster
+var TABBARS=8, TABCPB=8;                          // 8 Takte, Achtel-Raster (je Taktart)
+function tabMeterCells(){ return Math.max(4,Math.round((window.BAR||1920)/240)); }
 function buildTab(){
-  var t=el('tab'); if(!t)return; var h='',n=TABBARS*TABCPB,c;
+  var t=el('tab'); if(!t)return;
+  TABCPB=tabMeterCells();
+  var bc=(window.METER&&window.METER.id==='6/8')?3:2;   // Zellen pro Zaehlzeit
+  var h='',n=TABBARS*TABCPB,c;
+  t.style.gridTemplateColumns='14px repeat('+n+',minmax(0,1fr))';
   h+='<span class="ts"></span>';
   for(c=0;c<n;c++)h+='<span class="tch" id="tabh-'+c+'"></span>';
   for(var s=0;s<6;s++){
     h+='<span class="ts">'+TABNAM[s]+'</span>';
-    for(var c=0;c<n;c++)h+='<span class="tc'+(c%TABCPB===0?' tbar':(c%2===0?' tbeat':''))+'" id="tab-'+s+'-'+c+'"></span>';
+    for(var c=0;c<n;c++)h+='<span class="tc'+(c%TABCPB===0?' tbar':(c%bc===0?' tbeat':''))+'" id="tab-'+s+'-'+c+'"></span>';
   }
   h+='<div class="tab-cur" aria-hidden="true"></div>';
   h+='<div class="tab-play" id="tabPlay" aria-hidden="true"></div>';
@@ -649,6 +654,11 @@ if(suL)suL.addEventListener('click',function(){
   document.body.appendChild(suMenu);
   suL.setAttribute('aria-expanded','true');
   document.addEventListener('click',suMenuDoc,true);
+});
+
+/* Taktartwechsel der Engine: Raster neu aufbauen, Anzeige leeren. */
+document.addEventListener('mp-meter',function(){
+  buildTab(); tabWin=-1; tabBar=-1;
 });
 
 /* --- Start ------------------------------------------------------------- */
