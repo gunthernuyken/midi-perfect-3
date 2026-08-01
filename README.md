@@ -152,9 +152,12 @@ Nach Reroll/Mutation zieht die Vorschau beim nächsten Taktwechsel nach.
   weiterhin allein der Lane-Schalter im Transport. Voreinstellung:
   Klaviatur alle, Tabulatur alle außer Drums. Der Zustand überlebt den
   Reload (`midiperfect3.ui.v1`).
-- **Saitenwahl:** kleinster Bund gewinnt; ist die Zelle belegt, weicht die
-  Note auf die nächste freie Saite aus. Noten außerhalb des Griffbereichs
-  (Bass!) werden oktaviert. Drums erscheinen als × auf der E-Zeile.
+- **Saitenwahl mit Lagen-Heuristik:** Die Wahl orientiert sich an der Lage
+  des aktuellen Akkords (Bund seiner Barré-Form) — deckungsgleich mit dem
+  Griffbild darüber; offene Saiten bleiben idiomatisch erlaubt. Noten
+  außerhalb des Griffbereichs (Bass!) werden oktaviert, Drums erscheinen
+  als × auf der E-Zeile. Die Bundzahl steht an ihrer **echten
+  Zeitposition** im Takt — Shuffle- und 12/8-Feel sind sichtbar.
 - Die Engine liefert die Ereignisse über den `MP3TAB`-Haken im Scheduler;
   die Klaviatur filtert über eine Hülle um `litKey`. Note-Off läuft
   ungefiltert, damit beim Abschalten keine Taste hängen bleibt.

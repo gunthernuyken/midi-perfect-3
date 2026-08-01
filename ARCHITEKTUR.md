@@ -59,9 +59,12 @@ Standard-Stimmung e B G D A E.
 - **Datenfluss:** die Engine reicht am Visual-Timer Lane-Nummer und Tick
   durch (`MP3TAB.note(m, li, t)`), zeitgenau zum hörbaren Note-On — die
   einzige Durchreiche, die für das Dock ergänzt wurde
-- **Saitenwahl** (`tabMap`): kleinster Bund gewinnt, belegte Zelle weicht
-  auf die nächste freie Saite aus; Noten außerhalb des Griffbereichs werden
-  oktaviert; Drums erscheinen als × auf der E-Zeile
+- **Saitenwahl** (`tabMap`): Lagen-Heuristik — Kostenfunktion um die Lage
+  des aktuellen Akkords (Bund seiner Barré-Form aus `pickShape`, dieselbe
+  Quelle wie die Griffbilder), offene Saiten idiomatisch erlaubt, belegte
+  Zellen weichen aus; Noten außerhalb des Griffbereichs werden oktaviert;
+  Drums erscheinen als × auf der E-Zeile. Platzierung an der echten
+  Zeitposition innerhalb der Zelle (`--fx`), nicht in Zellenmitte
 - **Zwei Modi:** Fenster (8 Takte füllen, am Fensterrand leeren) oder
   Scroll (laufender Takt fest in der Mitte, Historie links)
 - **Vorschau:** beide Modi zeichnen Kommendes gedimmt aus den bereits

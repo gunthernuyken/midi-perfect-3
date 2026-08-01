@@ -3,6 +3,28 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-Q — Lagen-Heuristik, Griffbild = Tab-Lage, echte Zeitposition
+
+**Problem:** Die Saitenwahl nahm pro Note stur den kleinsten Bund — Läufe
+sprangen zwischen offener Lage und 5. Bund, das Griffbild sagte etwas
+anderes als die Tab-Zahlen darunter, und die Bundzahlen standen in
+Zellenmitte statt dort, wo sie klingen.
+
+**Geändert**
+- **Lagen-Heuristik:** Kostenfunktion um die Lage des aktuellen Akkords —
+  den Bund seiner Barré-Form aus `pickShape`, derselben Quelle wie die
+  Griffbilder. Läufe bleiben im Vier-Bund-Fenster der Lage, offene Saiten
+  bleiben idiomatisch erlaubt. Deterministisch: Vorschau und Live rechnen
+  identisch. Gemessen: A7-Takte clustern um Bund 5–9, D7 um 10–12,
+  Streuung 2,9 Bünde statt Lagenspringerei.
+- **Griffbild = Tab-Lage:** beide sprechen jetzt dieselbe Sprache, weil
+  beide aus `pickShape` kommen.
+- **Echte Zeitposition:** die Bundzahl sitzt horizontal an ihrem
+  tatsächlichen Tick innerhalb der Zelle (`--fx`), nicht in der Mitte —
+  Shuffle-Achtel und 12/8-Feel werden sichtbar. (Der Anzeige-Teil der
+  Taktarten-Frage; echte 3/4- und 12/8-Unterstützung in der Engine bleibt
+  ein eigenes Vorhaben, Grundlage: werkstatt/METER-ANALYSE.md.)
+
 ## BUILD 2026-08-01-P — Griffbilder permanent, Songbook-Stil
 
 **Problem:** Griffbilder hinter einem Klick nützen beim Spielen nichts —
