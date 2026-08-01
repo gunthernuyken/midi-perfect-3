@@ -126,7 +126,10 @@ von **8 Takten** im Achtel-Raster in Standard-Stimmung (e B G D A E):
 Bundzahlen erscheinen zeitgenau zum hörbaren Note-On auf der Saitenlinie,
 der laufende Takt ist hinterlegt und ein **Playhead** führt als leuchtende
 Linie durch das Raster (aus der Scheduler-Position berechnet, auch im
-Clock-Slave korrekt). Kräftige Striche markieren Taktanfänge,
+Clock-Slave korrekt). Über dem Raster läuft die **Akkordzeile**: der Name
+steht bei jedem Akkordwechsel am Taktanfang; Klick öffnet ein
+**Griffbild** — E-/A-Form-Barré mit Bundangabe, als eigenes SVG ohne
+externe Bibliothek. Kräftige Striche markieren Taktanfänge,
 feine die Viertel. Zwei 16tel im selben Achtel stehen nebeneinander in der
 Zelle. Der Umschalter neben den Tab-Filtern wählt zwischen zwei Modi
 (gespeichert in `midiperfect3.ui.v1`):

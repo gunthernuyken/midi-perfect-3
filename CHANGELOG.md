@@ -3,6 +3,35 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-N — Cubase-Stop repariert, Akkordzeile mit Griffbildern
+
+**Problem 1:** Cubase startete beim Play mit, reagierte aber nicht auf den
+roten Stop-Knopf — nur der Sofortbefehl funktionierte.
+
+**Ursache:** Wertekonflikt aus dem Markup-Umbau: das neue „Bei
+STOP"-Auswahlfeld liefert `stop`/`none`, die Engine prüfte auf den alten
+V2-Wert `'1'` — die Bedingung war nie wahr, der Stop wurde nie gesendet.
+
+**Geändert:** Prüfung auf `'none'` umgestellt. Gemessen: Play sendet
+MMC `06 02`, der rote Stop jetzt MMC `06 01`.
+
+**Problem 2:** Die Tabulatur zeigt Einzelnoten — rechnerisch richtig, aber
+ohne harmonischen Kontext schwer spielbar.
+
+**Geändert**
+- **Akkordzeile** über der Tabulatur: der Name steht am Taktanfang bei
+  jedem Akkordwechsel (und immer am linken Rand des Fensters). Quelle ist
+  `gBars` — dieselbe Wahrheit, aus der die Engine spielt.
+- **Griffbilder:** Klick auf einen Akkordnamen öffnet ein Popup mit
+  E-/A-Form-Barrégriff samt Bundangabe — als eigenes SVG, bewusst ohne
+  externe Bibliothek (kein CDN, keine Abhängigkeit). Zwei bewegliche
+  Standardformen statt aller Voicing-Varianten; exotische Typen (9, 13,
+  7b9 …) werden auf den nächstliegenden Griff vereinfacht und mit ≈
+  gekennzeichnet.
+- Dock wächst dafür von 104 auf 116 px; alle sieben Bereiche passen
+  weiterhin bei 1440 × 900 ohne Scrollen (knappster: MIDI & Transport
+  716 von 720 px).
+
 ## BUILD 2026-08-01-M — Slave-Wartezustand sichtbar in der Transportleiste
 
 **Problem:** Seit Build K wartet der Transport bei SLAVE AN ehrlich auf die
