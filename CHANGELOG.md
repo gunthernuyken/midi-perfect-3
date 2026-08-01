@@ -3,6 +3,18 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-L — Build-Kennung zeigt wieder die Wahrheit
+
+**Problem:** Die Seitenleiste zeigte dauerhaft „BUILD 2026-08-01-A", egal
+welcher Build lief — man konnte nicht erkennen, welche Version geladen ist.
+
+**Ursache:** `build.py` ersetzte einen Anker-Text, den es seit dem Umbau
+des Markups nicht mehr gibt; `str.replace` schlägt still fehl.
+
+**Geändert:** Die Ersetzung zielt jetzt auf das `buildTag`-Element und
+läuft über `sub1()` — fällt der Anker künftig weg, bricht der Bau ab,
+statt still die alte Kennung auszuliefern.
+
 ## BUILD 2026-08-01-K — Clock-Slave: Wartezustand schedult nicht mehr
 
 **Problem:** Mit SLAVE AN, aber ohne laufende DAW-Clock spielte Play den
