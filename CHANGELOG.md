@@ -3,6 +3,23 @@
 Versionsschema: `BUILD YYYY-MM-DD-X` — Datum plus Buchstabe für mehrere
 Stände pro Tag. Die Build-Kennung steht links oben in der Seitenleiste.
 
+## BUILD 2026-08-01-P — Griffbilder permanent, Songbook-Stil
+
+**Problem:** Griffbilder hinter einem Klick nützen beim Spielen nichts —
+da sind beide Hände am Instrument. Vorbild: gedrucktes Notenblatt, wo die
+Diagramme an jedem Akkordwechsel über dem System stehen.
+
+**Geändert**
+- Mini-Griffbild (eine Form, vier Bünde, Bundangabe) steht **permanent**
+  mit dem Namen über der Tabulatur an jedem Akkordwechsel
+- Schalter **𝄞 Griffe** in der Dock-Leiste blendet auf die kompakte
+  Namenszeile zurück (gespeichert in `midiperfect3.ui.v1`); das Dock
+  wächst mit Griffbildern auf 160 px
+- Klick auf den Namen öffnet weiterhin das große Popup mit beiden Formen
+- Der knappste Bereich (MIDI & Transport) kann mit Griffbildern bei
+  1440 × 900 minimal rollen — der Preis für die Songbook-Zeile, per
+  Schalter abwählbar
+
 ## BUILD 2026-08-01-N — Cubase-Stop repariert, Akkordzeile mit Griffbildern
 
 **Problem 1:** Cubase startete beim Play mit, reagierte aber nicht auf den
