@@ -234,3 +234,8 @@ ausgelieferte Datei steht für sich allein.
 
 Neu bauen: `python3 build.py` (erwartet `MIDI PERFECT 2.html` unter dem im
 Skript gesetzten Pfad).
+
+
+## Spendiere mir einen Kaffee
+
+Wenn dir MIDI PERFECT 3 die Arbeit erleichtert: PayPal @guenuy — https://paypal.me/guenuy
